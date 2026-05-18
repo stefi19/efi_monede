@@ -86,13 +86,32 @@ export default function Chat() {
 
         {messages.map((msg, i) => {
           const sender = users.find((u) => u.id === msg.fromUserId);
+          const isSystem = msg.fromUserId === 'system';
           const isMe = msg.fromUserId === currentUser.id;
           const day = formatDay(msg.date);
           const showDay = day !== lastDay;
           lastDay = day;
 
           const prevMsg = messages[i - 1];
-          const showAvatar = !isMe && (i === 0 || prevMsg?.fromUserId !== msg.fromUserId);
+          const showAvatar = !isMe && !isSystem && (i === 0 || prevMsg?.fromUserId !== msg.fromUserId);
+
+          // System announcement (life moment purchase)
+          if (isSystem) {
+            return (
+              <div key={msg.id}>
+                {showDay && (
+                  <div className="flex justify-center my-4">
+                    <span className="text-xs text-gray-600 bg-white/5 px-3 py-1 rounded-full">{day}</span>
+                  </div>
+                )}
+                <div className="flex justify-center my-3">
+                  <div className="bg-[#7c6af7]/15 border border-[#7c6af7]/30 rounded-2xl px-4 py-2 max-w-[85%] text-center">
+                    <p className="text-xs text-[#a78bfa] font-medium">{msg.text}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div key={msg.id}>

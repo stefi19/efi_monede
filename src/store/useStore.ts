@@ -336,6 +336,20 @@ export const useStore = create<StoreState>()(
             };
           }),
         });
+
+        // Post a system message to the group chat
+        const buyer = users.find((u) => u.id === currentUserId);
+        if (buyer) {
+          const qtyLabel = qty > 1 ? `${qty}x ` : '';
+          const systemMsg: ChatMessage = {
+            id: Date.now().toString() + '-life',
+            fromUserId: 'system',
+            text: `${buyer.name} just bought ${qtyLabel}${name} ${emoji} for Ɛ${total.toLocaleString()} 💜`,
+            date: now,
+          };
+          set((s) => ({ messages: [...s.messages, systemMsg] }));
+          notify('🎉 Life moment!', `${buyer.name} bought ${qtyLabel}${name} ${emoji}`);
+        }
       },
 
       sendMessage: (text) => {
