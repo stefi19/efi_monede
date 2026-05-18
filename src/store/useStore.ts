@@ -69,6 +69,7 @@ interface StoreState {
   getCurrentUser: () => User | null;
   postSystemMessage: (text: string) => void;
   sendMessage: (text: string) => void;
+  giftForLife: (itemId: string, name: string, emoji: string, qty: number, total: number, recipientId: string) => boolean;
   /** Called by the Firestore listener — applies remote state without re-saving */
   _applyRemote: (users: User[], messages: ChatMessage[]) => void;
 }
@@ -359,6 +360,74 @@ export const useStore = create<StoreState>()(
         } else {
           syncAfter(newUsers, get().messages);
         }
+      },
+
+      giftForLife: (itemId, name, emoji, qty, total, recipientId) => {
+        const { users, currentUserId } = get();
+        const buyer = users.find((u) => u.id === currentUserId);
+        const recipient = users.find((u) => u.id === recipientId);
+        if (!buyer || !recipient || total > buyer.balance || total <= 0) return false;
+
+        const now = new Date().toISOString();
+        const sendTx: Transaction = {
+          id: Date.now().toString() + '-gift-send',
+          type: 'send',
+          amount: total,
+          currency: 'EFI',
+          description: `Gifted ${qty}x ${name} ${emoji} to ${recipient.name}`,
+          counterparty: recipient.name,
+          date: now,
+          category: 'exchange',
+        };
+        const receiveTx: Transaction = {
+          id: Date.now().toString() + '-gift-recv',
+          type: 'receive',
+          amount: total,
+          currency: 'EFI',
+          description: `Received ${qty}x ${name} ${emoji} from ${buyer.name}`,
+          counterparty: buyer.name,
+          date: now,
+          category: 'exchange',
+        };
+
+        const newUsers = users.map((u) => {
+          if (u.id === currentUserId) {
+            return {
+              ...u,
+              balance: u.balance - total,
+              transactions: [sendTx, ...u.transactions],
+            };
+          }
+          if (u.id === recipientId) {
+            const items = u.lifeItems ?? [];
+            const existing = items.find((li) => li.id === itemId);
+            const updatedItems = existing
+              ? items.map((li) =>
+                  li.id === itemId
+                    ? { ...li, qty: li.qty + qty, totalSpent: li.totalSpent + total }
+                    : li
+                )
+              : [...items, { id: itemId, name, emoji, qty, totalSpent: total }];
+            return {
+              ...u,
+              transactions: [receiveTx, ...u.transactions],
+              lifeItems: updatedItems,
+            };
+          }
+          return u;
+        });
+
+        const systemMsg: ChatMessage = {
+          id: Date.now().toString() + '-gift',
+          fromUserId: 'system',
+          text: `${buyer.name} gifted ${recipient.name} ${qty > 1 ? `${qty}x ` : ''}${name} ${emoji} 🎁`,
+          date: now,
+        };
+        const newMessages = [...get().messages, systemMsg];
+        set({ users: newUsers, messages: newMessages });
+        syncAfter(newUsers, newMessages);
+        notify('🎁 Gift sent!', `You gifted ${name} ${emoji} to ${recipient.name}`);
+        return true;
       },
 
       postSystemMessage: (text: string) => {
