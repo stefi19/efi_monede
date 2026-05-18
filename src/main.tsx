@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { notify } from './utils/notify';
+import { subscribeToPush } from './lib/pushSubscription';
 import { loadRemoteState, subscribeToRemoteState, saveRemoteState } from './lib/sync';
 import { useStore, initialUsers } from './store/useStore';
 
@@ -26,7 +27,7 @@ async function initSync() {
   subscribeToRemoteState(async (users, messages) => {
     useStore.getState()._applyRemote(users, messages);
 
-    // Notify for the latest incoming message
+    // In-app notification (shown while app is open — the SW handles background)
     const last = messages[messages.length - 1];
     if (last) {
       const sender = users.find((u) => u.id === last.fromUserId);
@@ -34,6 +35,13 @@ async function initSync() {
       notify(title, last.text);
     }
   });
+
+  // 3. Register for background push notifications (if permission already granted)
+  //    If permission is not yet granted, subscribeToPush() will be called again
+  //    from notify.ts after the user taps the bell button.
+  if (Notification.permission === 'granted') {
+    subscribeToPush().catch(() => {});
+  }
 }
 
 initSync();

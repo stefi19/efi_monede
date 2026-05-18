@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User, ChatMessage } from '../store/useStore';
+import { getPushSubscriptions } from './pushSubscription';
 
 // ── Stable device ID (per browser tab session) ──────────────────────────────
 // We use this so the Firestore listener can skip applying updates that
@@ -44,8 +45,34 @@ export async function saveRemoteState(users: User[], messages: ChatMessage[]) {
       updatedAt: Date.now(),
     };
     await setDoc(STATE_DOC, payload);
+
+    // After saving, send a background push to all OTHER devices so they get
+    // notified even when their app is completely closed.
+    const last = messages[messages.length - 1];
+    if (last) {
+      const sender = users.find((u) => u.id === last.fromUserId);
+      const title  = last.fromUserId === 'system'
+        ? '🔔 Efi Monede'
+        : (sender?.name ?? 'Efi Monede');
+      _sendBackgroundPush(title, last.text).catch(() => {});
+    }
   } catch (err) {
     console.warn('[sync] saveRemoteState failed:', err);
+  }
+}
+
+/** Fire-and-forget: reads all push subscriptions from Firestore and POSTs to /api/push */
+async function _sendBackgroundPush(title: string, body: string) {
+  try {
+    const subscriptions = await getPushSubscriptions();
+    if (!subscriptions.length) return;
+    await fetch('/api/push', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ title, body, subscriptions }),
+    });
+  } catch (err) {
+    console.warn('[push] background push failed:', err);
   }
 }
 

@@ -34,13 +34,17 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      // Use our custom SW (src/sw.ts) so we can add push event handlers
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
+        rollupFormat: 'iife',
       },
       devOptions: {
         enabled: true,
+        type: 'module',
       },
     }),
   ],

@@ -2,12 +2,23 @@
 // through the service worker via showNotification(). We always prefer the SW
 // path and only fall back to the legacy constructor on browsers that lack SW.
 
+import { subscribeToPush } from '../lib/pushSubscription';
+
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!('Notification' in window)) return false;
-  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'granted') {
+    // Already granted — make sure we're also subscribed to background push
+    subscribeToPush().catch(() => {});
+    return true;
+  }
   if (Notification.permission === 'denied') return false;
+
   // Must be called from a user-gesture context on iOS
   const result = await Notification.requestPermission();
+  if (result === 'granted') {
+    // Subscribe to background push immediately while we have a user gesture
+    subscribeToPush().catch(() => {});
+  }
   return result === 'granted';
 }
 
