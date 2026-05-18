@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { notify } from '../utils/notify';
 
 export interface Transaction {
   id: string;
@@ -347,6 +348,14 @@ export const useStore = create<StoreState>()(
           date: new Date().toISOString(),
         };
         set((s) => ({ messages: [...s.messages, msg] }));
+        // Notify locally (sender) immediately
+        try {
+          const users = get().users;
+          const sender = users.find((u) => u.id === currentUserId);
+          notify(sender ? `${sender.name} (you)` : 'New message', text);
+        } catch (e) {
+          // ignore notify errors
+        }
       },
     }),
     { name: 'efi-monede-store' }
