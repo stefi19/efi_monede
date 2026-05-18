@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Send from './pages/Send';
@@ -7,22 +7,38 @@ import Cards from './pages/Cards';
 import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
 import TopUp from './pages/TopUp';
+import Login from './pages/Login';
+import { useStore } from './store/useStore';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const currentUserId = useStore((s) => s.currentUserId);
+  if (!currentUserId) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <div className="max-w-md mx-auto min-h-screen bg-[#0a0a0a] relative">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/send" element={<Send />} />
-          <Route path="/exchange" element={<Exchange />} />
-          <Route path="/cards" element={<Cards />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/topup" element={<TopUp />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/send" element={<ProtectedRoute><Send /></ProtectedRoute>} />
+          <Route path="/exchange" element={<ProtectedRoute><Exchange /></ProtectedRoute>} />
+          <Route path="/cards" element={<ProtectedRoute><Cards /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/topup" element={<ProtectedRoute><TopUp /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <BottomNav />
+        <ProtectedBottomNav />
       </div>
     </BrowserRouter>
   );
+}
+
+function ProtectedBottomNav() {
+  const currentUserId = useStore((s) => s.currentUserId);
+  if (!currentUserId) return null;
+  return <BottomNav />;
 }

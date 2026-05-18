@@ -5,30 +5,41 @@ import { useStore } from '../store/useStore';
 import TransactionItem from '../components/TransactionItem';
 
 const quickActions = [
-  { label: 'Send', icon: Send, color: 'bg-[#7c6af7]', to: '/send' },
-  { label: 'Add', icon: Plus, color: 'bg-[#22c55e]', to: '/topup' },
+  { label: 'Trimite', icon: Send, color: 'bg-[#7c6af7]', to: '/send' },
+  { label: 'Adaugă', icon: Plus, color: 'bg-[#22c55e]', to: '/topup' },
   { label: 'Exchange', icon: ArrowLeftRight, color: 'bg-[#f59e0b]', to: '/exchange' },
   { label: 'Request', icon: Zap, color: 'bg-[#ec4899]', to: '/request' },
 ];
 
+const userGradients: Record<string, string> = {
+  stefi: 'from-[#7c6af7] to-[#a78bfa]',
+  mara: 'from-[#ec4899] to-[#f9a8d4]',
+  adriana: 'from-[#22c55e] to-[#86efac]',
+};
+
 export default function Home() {
   const navigate = useNavigate();
-  const { balance, transactions, balanceVisible, toggleBalanceVisible } = useStore();
+  const { balanceVisible, toggleBalanceVisible, getCurrentUser } = useStore();
+  const user = getCurrentUser();
   const [showAll, setShowAll] = useState(false);
 
-  const displayed = showAll ? transactions : transactions.slice(0, 5);
+  if (!user) return null;
+
+  const displayed = showAll ? user.transactions : user.transactions.slice(0, 5);
+  const totalIn = user.transactions.filter(t => t.type === 'receive' || t.type === 'topup').reduce((s, t) => s + t.amount, 0);
+  const totalOut = user.transactions.filter(t => t.type === 'send').reduce((s, t) => s + t.amount, 0);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-12 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full revolut-gradient flex items-center justify-center text-sm font-bold">
-            E
+          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGradients[user.id] ?? 'revolut-gradient'} flex items-center justify-center text-sm font-bold text-white`}>
+            {user.avatar}
           </div>
           <div>
-            <p className="text-xs text-gray-400">Good morning,</p>
-            <p className="text-sm font-semibold text-white">Efi User</p>
+            <p className="text-xs text-gray-400">Bună,</p>
+            <p className="text-sm font-semibold text-white">{user.name} 👋</p>
           </div>
         </div>
         <button className="relative w-9 h-9 rounded-full glass flex items-center justify-center">
@@ -46,22 +57,22 @@ export default function Home() {
           </div>
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-400 uppercase tracking-widest">Total Balance</p>
+              <p className="text-xs text-gray-400 uppercase tracking-widest">Sold total</p>
               <button onClick={toggleBalanceVisible} className="text-gray-400 hover:text-white transition-colors">
                 {balanceVisible ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
             </div>
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-3xl font-bold text-white">
-                {balanceVisible ? `Ɛ${balance.toLocaleString()}` : '••••••'}
+                {balanceVisible ? `Ɛ${user.balance.toLocaleString()}` : '••••••'}
               </span>
               <span className="text-sm text-gray-400">EFI</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full font-medium">
+              <span className="text-xs px-2 py-0.5 bg-white/10 text-gray-300 rounded-full font-medium">
                 💜 Efi Monede
               </span>
-              <span className="text-xs text-gray-500">≈ $0.00 USD</span>
+              <span className="text-xs text-gray-500">{user.username}</span>
             </div>
           </div>
         </div>
@@ -71,11 +82,7 @@ export default function Home() {
       <div className="px-5 mb-6">
         <div className="grid grid-cols-4 gap-3">
           {quickActions.map(({ label, icon: Icon, color, to }) => (
-            <button
-              key={label}
-              onClick={() => navigate(to)}
-              className="flex flex-col items-center gap-2"
-            >
+            <button key={label} onClick={() => navigate(to)} className="flex flex-col items-center gap-2">
               <div className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center shadow-lg`}>
                 <Icon size={22} className="text-white" />
               </div>
@@ -89,18 +96,16 @@ export default function Home() {
       <div className="px-5 mb-6">
         <div className="grid grid-cols-2 gap-3">
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Money In</p>
+            <p className="text-xs text-gray-500 mb-1">Primit</p>
             <p className="text-lg font-bold text-green-400">
-              {balanceVisible ? `Ɛ${useStore.getState().totalReceived.toLocaleString()}` : '••••'}
+              {balanceVisible ? `Ɛ${totalIn.toLocaleString()}` : '••••'}
             </p>
-            <p className="text-xs text-gray-600 mt-0.5">This month</p>
           </div>
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Money Out</p>
+            <p className="text-xs text-gray-500 mb-1">Trimis</p>
             <p className="text-lg font-bold text-red-400">
-              {balanceVisible ? `Ɛ${useStore.getState().totalSent.toLocaleString()}` : '••••'}
+              {balanceVisible ? `Ɛ${totalOut.toLocaleString()}` : '••••'}
             </p>
-            <p className="text-xs text-gray-600 mt-0.5">This month</p>
           </div>
         </div>
       </div>
@@ -108,19 +113,18 @@ export default function Home() {
       {/* Transactions */}
       <div className="px-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-white">Recent Transactions</h2>
-          <button
-            onClick={() => setShowAll(!showAll)}
-            className="text-xs text-[#7c6af7] flex items-center gap-1 font-medium"
-          >
-            {showAll ? 'Show less' : 'See all'}
+          <h2 className="text-base font-semibold text-white">Tranzacții recente</h2>
+          <button onClick={() => setShowAll(!showAll)} className="text-xs text-[#7c6af7] flex items-center gap-1 font-medium">
+            {showAll ? 'Mai puțin' : 'Vezi toate'}
             <ChevronRight size={14} />
           </button>
         </div>
         <div className="glass rounded-2xl overflow-hidden">
-          {displayed.map((tx) => (
-            <TransactionItem key={tx.id} transaction={tx} />
-          ))}
+          {displayed.length === 0 ? (
+            <p className="text-center text-sm text-gray-600 py-8">Nicio tranzacție încă</p>
+          ) : (
+            displayed.map((tx) => <TransactionItem key={tx.id} transaction={tx} />)
+          )}
         </div>
       </div>
     </div>

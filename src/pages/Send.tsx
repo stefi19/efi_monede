@@ -1,35 +1,35 @@
 import { useState } from 'react';
-import { ArrowLeft, Search, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import type { User } from '../store/useStore';
+
+const userGradients: Record<string, string> = {
+  stefi: 'from-[#7c6af7] to-[#a78bfa]',
+  mara: 'from-[#ec4899] to-[#f9a8d4]',
+  adriana: 'from-[#22c55e] to-[#86efac]',
+};
 
 export default function Send() {
   const navigate = useNavigate();
-  const { contacts, balance, sendMoney } = useStore();
+  const { users, currentUserId, getCurrentUser, sendMoney } = useStore();
+  const currentUser = getCurrentUser();
+
   const [step, setStep] = useState<'contacts' | 'amount' | 'success'>('contacts');
-  const [selected, setSelected] = useState<{ name: string; username: string; avatar: string } | null>(null);
+  const [selected, setSelected] = useState<User | null>(null);
   const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [search, setSearch] = useState('');
   const [error, setError] = useState('');
 
-  const filtered = contacts.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.username.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleSelectContact = (contact: typeof contacts[0]) => {
-    setSelected(contact);
-    setStep('amount');
-  };
+  // Only show the other 2 users
+  const contacts = users.filter((u) => u.id !== currentUserId);
 
   const handleSend = () => {
     const num = parseFloat(amount);
-    if (!num || num <= 0) return setError('Enter a valid amount');
-    if (num > balance) return setError('Insufficient balance');
-    sendMoney(num, selected!.name);
-    setStep('success');
+    if (!num || num <= 0) return setError('Introdu o sumă validă');
+    if (!currentUser || num > currentUser.balance) return setError('Sold insuficient');
+    const ok = sendMoney(selected!.id, num);
+    if (ok) setStep('success');
+    else setError('Eroare la trimitere');
   };
 
   if (step === 'success') {
@@ -40,17 +40,14 @@ export default function Send() {
             <CheckCircle size={40} className="text-green-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Sent!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Trimis! 🎉</h2>
             <p className="text-gray-400">
-              You sent <span className="text-white font-semibold">Ɛ{parseFloat(amount).toLocaleString()}</span> to{' '}
-              <span className="text-white font-semibold">{selected?.name}</span>
+              Ai trimis <span className="text-white font-semibold">Ɛ{parseFloat(amount).toLocaleString()}</span>{' '}
+              lui <span className="text-white font-semibold">{selected?.name}</span>
             </p>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            className="w-full py-4 bg-[#7c6af7] text-white font-semibold rounded-2xl"
-          >
-            Back to Home
+          <button onClick={() => navigate('/')} className="w-full py-4 bg-[#7c6af7] text-white font-semibold rounded-2xl">
+            Înapoi acasă
           </button>
         </div>
       </div>
@@ -64,13 +61,13 @@ export default function Send() {
           <button onClick={() => setStep('contacts')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
             <ArrowLeft size={18} className="text-white" />
           </button>
-          <h1 className="text-lg font-semibold text-white">Send Efi Monede</h1>
+          <h1 className="text-lg font-semibold text-white">Trimite Efi Monede</h1>
         </div>
 
         <div className="px-5 flex flex-col items-center gap-6">
           {/* Recipient */}
           <div className="flex items-center gap-3 glass rounded-2xl px-4 py-3 w-full">
-            <div className="w-10 h-10 rounded-full revolut-gradient flex items-center justify-center text-sm font-bold">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${userGradients[selected.id]} flex items-center justify-center text-lg font-bold text-white`}>
               {selected.avatar}
             </div>
             <div>
@@ -79,7 +76,7 @@ export default function Send() {
             </div>
           </div>
 
-          {/* Amount */}
+          {/* Amount input */}
           <div className="text-center w-full">
             <div className="flex items-center justify-center gap-2 mb-2">
               <span className="text-5xl font-bold text-white">Ɛ</span>
@@ -92,38 +89,26 @@ export default function Send() {
                 autoFocus
               />
             </div>
-            <p className="text-sm text-gray-500">Balance: Ɛ{balance.toLocaleString()}</p>
+            <p className="text-sm text-gray-500">Sold: Ɛ{currentUser?.balance.toLocaleString()}</p>
             {error && <p className="text-sm text-red-400 mt-1">{error}</p>}
           </div>
 
           {/* Quick amounts */}
-          <div className="flex gap-2 w-full justify-center">
+          <div className="flex gap-2 flex-wrap justify-center">
             {[10, 50, 100, 500].map((v) => (
-              <button
-                key={v}
-                onClick={() => setAmount(v.toString())}
-                className="px-3 py-1.5 glass rounded-full text-sm text-gray-300 hover:bg-white/10"
-              >
+              <button key={v} onClick={() => setAmount(v.toString())}
+                className="px-3 py-1.5 glass rounded-full text-sm text-gray-300 hover:bg-white/10">
                 Ɛ{v}
               </button>
             ))}
           </div>
 
-          {/* Note */}
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a note (optional)"
-            className="w-full glass rounded-2xl px-4 py-3 text-sm text-white bg-transparent outline-none placeholder-gray-600"
-          />
-
           <button
             onClick={handleSend}
-            disabled={!amount}
+            disabled={!amount || parseFloat(amount) <= 0}
             className="w-full py-4 bg-[#7c6af7] disabled:opacity-40 text-white font-semibold rounded-2xl transition-opacity"
           >
-            Send Ɛ{amount || '0'}
+            Trimite Ɛ{amount || '0'}
           </button>
         </div>
       </div>
@@ -136,38 +121,26 @@ export default function Send() {
         <button onClick={() => navigate('/')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
           <ArrowLeft size={18} className="text-white" />
         </button>
-        <h1 className="text-lg font-semibold text-white">Send to</h1>
-      </div>
-
-      <div className="px-5 mb-4">
-        <div className="glass rounded-2xl flex items-center gap-3 px-4 py-3">
-          <Search size={16} className="text-gray-500" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name or @username"
-            className="flex-1 bg-transparent text-sm text-white outline-none placeholder-gray-600"
-            autoFocus
-          />
-        </div>
+        <h1 className="text-lg font-semibold text-white">Trimite la</h1>
       </div>
 
       <div className="px-5">
-        <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Contacts</p>
+        <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Prietenii tăi</p>
         <div className="glass rounded-2xl overflow-hidden">
-          {filtered.map((contact) => (
+          {contacts.map((contact) => (
             <button
               key={contact.id}
-              onClick={() => handleSelectContact(contact)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+              onClick={() => { setSelected(contact); setStep('amount'); setAmount(''); setError(''); }}
+              className="w-full flex items-center gap-4 px-4 py-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
             >
-              <div className="w-10 h-10 rounded-full revolut-gradient flex items-center justify-center text-sm font-bold flex-shrink-0">
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${userGradients[contact.id]} flex items-center justify-center text-lg font-bold text-white flex-shrink-0`}>
                 {contact.avatar}
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-white">{contact.name}</p>
-                <p className="text-xs text-gray-500">{contact.username}</p>
+                <p className="text-base font-semibold text-white">{contact.name}</p>
+                <p className="text-sm text-gray-500">{contact.username}</p>
               </div>
+              <div className="ml-auto text-gray-600 text-xl">›</div>
             </button>
           ))}
         </div>
