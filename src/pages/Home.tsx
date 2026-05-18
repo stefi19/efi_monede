@@ -23,8 +23,21 @@ export default function Home() {
   const { balanceVisible, toggleBalanceVisible, getCurrentUser } = useStore();
   const user = getCurrentUser();
   const [showAll, setShowAll] = useState(false);
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission>(
+    'Notification' in window ? Notification.permission : 'denied'
+  );
 
-  useEffect(() => { requestNotificationPermission(); }, []);
+  // On mount try silently — works on desktop; on iOS this is a no-op without gesture
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      setNotifPerm('granted');
+    }
+  }, []);
+
+  async function handleBellClick() {
+    const granted = await requestNotificationPermission();
+    setNotifPerm(granted ? 'granted' : 'denied');
+  }
 
   if (!user) return null;
 
@@ -45,9 +58,18 @@ export default function Home() {
             <p className="text-sm font-semibold text-white">{user.name} 👋</p>
           </div>
         </div>
-        <button className="relative w-9 h-9 rounded-full glass flex items-center justify-center">
-          <Bell size={18} className="text-gray-300" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#7c6af7] rounded-full" />
+        <button
+          onClick={handleBellClick}
+          className="relative w-9 h-9 rounded-full glass flex items-center justify-center"
+          title={notifPerm === 'granted' ? 'Notifications on' : 'Enable notifications'}
+        >
+          <Bell size={18} className={notifPerm === 'granted' ? 'text-[#7c6af7]' : 'text-gray-500'} />
+          {notifPerm !== 'granted' && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+          )}
+          {notifPerm === 'granted' && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#7c6af7] rounded-full" />
+          )}
         </button>
       </div>
 

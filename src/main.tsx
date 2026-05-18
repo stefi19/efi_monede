@@ -23,7 +23,7 @@ async function initSync() {
   }
 
   // 2. Subscribe to real-time changes from other devices
-  subscribeToRemoteState((users, messages) => {
+  subscribeToRemoteState(async (users, messages) => {
     useStore.getState()._applyRemote(users, messages);
 
     // Notify for the latest incoming message
