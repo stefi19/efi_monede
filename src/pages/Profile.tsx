@@ -29,7 +29,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
+    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
       <div className="px-5 pt-12 pb-6">
         <h1 className="text-xl font-bold text-white">Profile</h1>
       </div>

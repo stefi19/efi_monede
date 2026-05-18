@@ -159,7 +159,7 @@ export default function Chat() {
       </div>
 
       {/* Input */}
-      <div className="fixed bottom-[64px] left-0 right-0 max-w-md mx-auto px-4 py-3 bg-[#0a0a0a] border-t border-white/5">
+      <div className="fixed left-0 right-0 max-w-md mx-auto px-4 py-3 bg-[#0a0a0a] border-t border-white/5" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
         <div className="flex items-center gap-3 glass rounded-2xl px-4 py-2.5">
           <input
             type="text"

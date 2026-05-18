@@ -115,7 +115,7 @@ export default function Exchange() {
 
   if (done && selected) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center px-5 pb-24">
+      <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center px-5 pb-safe-nav">
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="text-7xl animate-bounce">{selected.emoji}</div>
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -145,7 +145,7 @@ export default function Exchange() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
+    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
       <div className="flex items-center gap-4 px-5 pt-12 pb-2">
         <button onClick={() => navigate('/')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
           <ArrowLeft size={18} className="text-white" />

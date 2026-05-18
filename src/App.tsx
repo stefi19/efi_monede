@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import TopUp from './pages/TopUp';
 import Login from './pages/Login';
 import Chat from './pages/Chat';
+import Request from './pages/Request';
 import { useStore } from './store/useStore';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/topup" element={<ProtectedRoute><TopUp /></ProtectedRoute>} />
           <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/request" element={<ProtectedRoute><Request /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <ProtectedBottomNav />

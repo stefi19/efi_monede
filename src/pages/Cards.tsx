@@ -40,7 +40,7 @@ export default function Cards() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
+    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
       <div className="px-5 pt-12 pb-6">
         <h1 className="text-xl font-bold text-white">My Cards</h1>
         <p className="text-sm text-gray-500 mt-1">Manage your Efi cards</p>

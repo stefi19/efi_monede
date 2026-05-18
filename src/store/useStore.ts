@@ -61,6 +61,7 @@ interface StoreState {
   addBalance: (amount: number) => void;
   spendForLife: (itemId: string, name: string, emoji: string, qty: number, total: number) => void;
   getCurrentUser: () => User | null;
+  postSystemMessage: (text: string) => void;
   sendMessage: (text: string) => void;
 }
 
@@ -350,6 +351,16 @@ export const useStore = create<StoreState>()(
           set((s) => ({ messages: [...s.messages, systemMsg] }));
           notify('🎉 Life moment!', `${buyer.name} bought ${qtyLabel}${name} ${emoji}`);
         }
+      },
+
+      postSystemMessage: (text: string) => {
+        const msg: ChatMessage = {
+          id: Date.now().toString(),
+          fromUserId: 'system',
+          text,
+          date: new Date().toISOString(),
+        };
+        set((s) => ({ messages: [...s.messages, msg] }));
       },
 
       sendMessage: (text) => {

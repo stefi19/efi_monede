@@ -33,7 +33,7 @@ export default function Home() {
   const totalOut = user.transactions.filter(t => t.type === 'send').reduce((s, t) => s + t.amount, 0);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
+    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-12 pb-4">
         <div className="flex items-center gap-3">

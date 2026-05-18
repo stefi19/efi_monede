@@ -23,7 +23,7 @@ export default function TopUp() {
 
   if (done) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center px-5 pb-24">
+      <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center px-5 pb-safe-nav">
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center">
             <CheckCircle size={40} className="text-green-400" />
@@ -46,7 +46,7 @@ export default function TopUp() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
+    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
       <div className="flex items-center gap-4 px-5 pt-12 pb-6">
         <button onClick={() => navigate('/')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
           <ArrowLeft size={18} className="text-white" />
