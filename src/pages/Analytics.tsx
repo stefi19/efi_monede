@@ -92,7 +92,7 @@ export default function Analytics() {
                   <YAxis hide />
                   <Tooltip
                     contentStyle={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 12, color: '#fff' }}
-                    formatter={(v: number, _: string, props: any) => [`${v}x ${props.payload.label}`, 'Quantity']}
+                    formatter={(v, _name, props: any) => [`${v}x ${props.payload.label}`, 'Quantity'] as [string, string]}
                     labelFormatter={() => ''}
                   />
                   <Bar dataKey="qty" radius={[8, 8, 0, 0]}>
