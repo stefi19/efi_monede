@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Bell, Send, Plus, ArrowLeftRight, Zap, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import TransactionItem from '../components/TransactionItem';
+import { requestNotificationPermission } from '../utils/notify';
 
 const quickActions = [
-  { label: 'Trimite', icon: Send, color: 'bg-[#7c6af7]', to: '/send' },
-  { label: 'Adaugă', icon: Plus, color: 'bg-[#22c55e]', to: '/topup' },
+  { label: 'Send', icon: Send, color: 'bg-[#7c6af7]', to: '/send' },
+  { label: 'Add', icon: Plus, color: 'bg-[#22c55e]', to: '/topup' },
   { label: 'Exchange', icon: ArrowLeftRight, color: 'bg-[#f59e0b]', to: '/exchange' },
   { label: 'Request', icon: Zap, color: 'bg-[#ec4899]', to: '/request' },
 ];
@@ -23,6 +24,8 @@ export default function Home() {
   const user = getCurrentUser();
   const [showAll, setShowAll] = useState(false);
 
+  useEffect(() => { requestNotificationPermission(); }, []);
+
   if (!user) return null;
 
   const displayed = showAll ? user.transactions : user.transactions.slice(0, 5);
@@ -38,7 +41,7 @@ export default function Home() {
             {user.avatar}
           </div>
           <div>
-            <p className="text-xs text-gray-400">Bună,</p>
+            <p className="text-xs text-gray-400">Hey,</p>
             <p className="text-sm font-semibold text-white">{user.name} 👋</p>
           </div>
         </div>
@@ -57,7 +60,7 @@ export default function Home() {
           </div>
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-gray-400 uppercase tracking-widest">Sold total</p>
+              <p className="text-xs text-gray-400 uppercase tracking-widest">Total balance</p>
               <button onClick={toggleBalanceVisible} className="text-gray-400 hover:text-white transition-colors">
                 {balanceVisible ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
@@ -96,13 +99,13 @@ export default function Home() {
       <div className="px-5 mb-6">
         <div className="grid grid-cols-2 gap-3">
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Primit</p>
+            <p className="text-xs text-gray-500 mb-1">Received</p>
             <p className="text-lg font-bold text-green-400">
               {balanceVisible ? `Ɛ${totalIn.toLocaleString()}` : '••••'}
             </p>
           </div>
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Trimis</p>
+            <p className="text-xs text-gray-500 mb-1">Sent</p>
             <p className="text-lg font-bold text-red-400">
               {balanceVisible ? `Ɛ${totalOut.toLocaleString()}` : '••••'}
             </p>
@@ -113,15 +116,15 @@ export default function Home() {
       {/* Transactions */}
       <div className="px-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-white">Tranzacții recente</h2>
+          <h2 className="text-base font-semibold text-white">Recent transactions</h2>
           <button onClick={() => setShowAll(!showAll)} className="text-xs text-[#7c6af7] flex items-center gap-1 font-medium">
-            {showAll ? 'Mai puțin' : 'Vezi toate'}
+            {showAll ? 'Show less' : 'See all'}
             <ChevronRight size={14} />
           </button>
         </div>
         <div className="glass rounded-2xl overflow-hidden">
           {displayed.length === 0 ? (
-            <p className="text-center text-sm text-gray-600 py-8">Nicio tranzacție încă</p>
+            <p className="text-center text-sm text-gray-600 py-8">No transactions yet</p>
           ) : (
             displayed.map((tx) => <TransactionItem key={tx.id} transaction={tx} />)
           )}

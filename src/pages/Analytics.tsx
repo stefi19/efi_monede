@@ -21,7 +21,7 @@ export default function Analytics() {
     .filter((t) => t.type === 'receive' || t.type === 'topup')
     .reduce((s, t) => s + t.amount, 0);
 
-  const lifeItems = user.lifeItems;
+  const lifeItems = user.lifeItems ?? [];
   const totalLifeSpent = lifeItems.reduce((s, li) => s + li.totalSpent, 0);
 
   const chartData = lifeItems.map((li) => ({
@@ -36,20 +36,20 @@ export default function Analytics() {
     <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24 overflow-y-auto">
       <div className="px-5 pt-12 pb-4">
         <h1 className="text-xl font-bold text-white">Analytics</h1>
-        <p className="text-sm text-gray-500 mt-1">Viața ta în Efi Monede 💜</p>
+        <p className="text-sm text-gray-500 mt-1">Your life in Efi Monede 💜</p>
       </div>
 
       {/* Summary cards */}
       <div className="px-5 mb-5">
         <div className="grid grid-cols-2 gap-3">
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Total primit</p>
+            <p className="text-xs text-gray-500 mb-1">Total received</p>
             <p className="text-xl font-bold text-green-400">
               {balanceVisible ? `Ɛ${totalReceived.toLocaleString()}` : '••••'}
             </p>
           </div>
           <div className="glass rounded-2xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Total trimis</p>
+            <p className="text-xs text-gray-500 mb-1">Total sent</p>
             <p className="text-xl font-bold text-red-400">
               {balanceVisible ? `Ɛ${totalSpent.toLocaleString()}` : '••••'}
             </p>
@@ -62,11 +62,11 @@ export default function Analytics() {
         <div className="px-5 mb-5">
           <div className="revolut-gradient rounded-2xl p-5 relative overflow-hidden">
             <div className="absolute -right-6 -top-6 w-28 h-28 bg-white/10 rounded-full" />
-            <p className="text-xs text-white/60 uppercase tracking-widest mb-1">Investit în viață</p>
+            <p className="text-xs text-white/60 uppercase tracking-widest mb-1">Invested in life</p>
             <p className="text-3xl font-bold text-white mb-1">
               {balanceVisible ? `Ɛ${totalLifeSpent.toLocaleString()}` : '••••'}
             </p>
-            <p className="text-xs text-white/60">{lifeItems.reduce((s, li) => s + li.qty, 0)} momente cumpărate</p>
+            <p className="text-xs text-white/60">{lifeItems.reduce((s, li) => s + li.qty, 0)} moments purchased</p>
           </div>
         </div>
       )}
@@ -78,7 +78,7 @@ export default function Analytics() {
             <div className="glass rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp size={16} className="text-[#7c6af7]" />
-                <p className="text-sm font-semibold text-white">Momente cumpărate</p>
+                <p className="text-sm font-semibold text-white">Moments purchased</p>
               </div>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={chartData} barSize={32}>
@@ -92,7 +92,7 @@ export default function Analytics() {
                   <YAxis hide />
                   <Tooltip
                     contentStyle={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 12, color: '#fff' }}
-                    formatter={(v: number, _: string, props: any) => [`${v}x ${props.payload.label}`, 'Cantitate']}
+                    formatter={(v: number, _: string, props: any) => [`${v}x ${props.payload.label}`, 'Quantity']}
                     labelFormatter={() => ''}
                   />
                   <Bar dataKey="qty" radius={[8, 8, 0, 0]}>
@@ -107,7 +107,7 @@ export default function Analytics() {
 
           {/* Life items list */}
           <div className="px-5 mb-5">
-            <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Detalii momente</p>
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Moment details</p>
             <div className="glass rounded-2xl overflow-hidden">
               {lifeItems.map((li, i) => (
                 <div key={li.id} className="flex items-center gap-3 px-4 py-4 border-b border-white/5 last:border-0">
@@ -124,7 +124,7 @@ export default function Analytics() {
                         <div
                           className="h-full rounded-full"
                           style={{
-                            width: `${Math.min((li.qty / Math.max(...lifeItems.map(x => x.qty))) * 100, 100)}%`,
+                            width: `${Math.min((li.qty / Math.max(1, ...lifeItems.map(x => x.qty))) * 100, 100)}%`,
                             background: barColors[i % barColors.length],
                           }}
                         />
@@ -145,9 +145,9 @@ export default function Analytics() {
         <div className="px-5 mb-5">
           <div className="glass rounded-2xl p-8 flex flex-col items-center gap-4 text-center">
             <div className="text-5xl">✨</div>
-            <p className="text-base font-semibold text-white">Niciun moment cumpărat încă</p>
+            <p className="text-base font-semibold text-white">No moments yet</p>
             <p className="text-sm text-gray-500">
-              Du-te la <span className="text-[#7c6af7] font-medium">Exchange</span> și schimbă Efi Monede în momente frumoase!
+              Head to <span className="text-[#7c6af7] font-medium">Exchange</span> and turn your Efi Monede into beautiful moments!
             </p>
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function Analytics() {
       {/* Recent exchanges from transactions */}
       {user.transactions.filter(t => t.type === 'exchange').length > 0 && (
         <div className="px-5">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Ultimele schimburi</p>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">Recent exchanges</p>
           <div className="glass rounded-2xl overflow-hidden">
             {user.transactions.filter(t => t.type === 'exchange').slice(0, 5).map((tx) => (
               <div key={tx.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-white/5 last:border-0">
@@ -165,7 +165,7 @@ export default function Analytics() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">{tx.description}</p>
-                  <p className="text-xs text-gray-500">{new Date(tx.date).toLocaleDateString('ro-RO')}</p>
+                  <p className="text-xs text-gray-500">{new Date(tx.date).toLocaleDateString('en-US')}</p>
                 </div>
                 <p className="text-sm font-semibold text-yellow-400">-Ɛ{tx.amount}</p>
               </div>

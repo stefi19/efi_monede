@@ -36,7 +36,7 @@ export default function Login() {
         setTimeout(() => {
           setPin('');
           setShake(false);
-          setError('PIN incorect. Încearcă din nou.');
+          setError('Wrong PIN. Try again.');
         }, 500);
       }
     }
@@ -57,7 +57,7 @@ export default function Login() {
           💜
         </div>
         <h1 className="text-2xl font-bold text-white">Efi Monede</h1>
-        <p className="text-sm text-gray-500">Alege contul tău</p>
+        <p className="text-sm text-gray-500">Choose your account</p>
       </div>
 
       {!selectedUser ? (
@@ -96,10 +96,10 @@ export default function Login() {
               {selectedUserObj?.avatar}
             </div>
             <p className="text-sm font-semibold text-white">{selectedUserObj?.name}</p>
-            <p className="text-xs text-gray-500">Apasă pentru a schimba</p>
+            <p className="text-xs text-gray-500">Tap to change</p>
           </button>
 
-          <p className="text-sm text-gray-400">Introdu PIN-ul</p>
+          <p className="text-sm text-gray-400">Enter your PIN</p>
 
           {/* PIN dots */}
           <div className={`flex gap-4 transition-all ${shake ? 'animate-bounce' : ''}`}>

@@ -16,11 +16,11 @@ export default function Profile() {
   if (!user) return null;
 
   const menuItems = [
-    { icon: Shield, label: 'Securitate & Privacy', sub: '2FA activ', color: 'text-green-400' },
-    { icon: Bell, label: 'Notificări', sub: 'Toate alertele active', color: 'text-blue-400' },
-    { icon: Star, label: 'Plan Premium', sub: 'Efi Gold Member', color: 'text-yellow-400' },
-    { icon: Smartphone, label: 'Dispozitive conectate', sub: '1 dispozitiv', color: 'text-purple-400' },
-    { icon: HelpCircle, label: 'Ajutor & Suport', sub: 'FAQ & contact', color: 'text-gray-400' },
+    { icon: Shield, label: 'Security & Privacy', sub: '2FA active', color: 'text-green-400' },
+    { icon: Bell, label: 'Notifications', sub: 'All alerts active', color: 'text-blue-400' },
+    { icon: Star, label: 'Premium Plan', sub: 'Efi Gold Member', color: 'text-yellow-400' },
+    { icon: Smartphone, label: 'Connected devices', sub: '1 device', color: 'text-purple-400' },
+    { icon: HelpCircle, label: 'Help & Support', sub: 'FAQ & contact', color: 'text-gray-400' },
   ];
 
   const handleLogout = () => {
@@ -31,7 +31,7 @@ export default function Profile() {
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
       <div className="px-5 pt-12 pb-6">
-        <h1 className="text-xl font-bold text-white">Profil</h1>
+        <h1 className="text-xl font-bold text-white">Profile</h1>
       </div>
 
       {/* Avatar */}
@@ -52,11 +52,11 @@ export default function Profile() {
         <div className="grid grid-cols-3 gap-3">
           <div className="glass rounded-2xl p-3 text-center">
             <p className="text-lg font-bold text-white">{user.transactions.length}</p>
-            <p className="text-xs text-gray-500">Tranzacții</p>
+            <p className="text-xs text-gray-500">Transactions</p>
           </div>
           <div className="glass rounded-2xl p-3 text-center">
             <p className="text-lg font-bold text-white">Ɛ{user.balance.toLocaleString()}</p>
-            <p className="text-xs text-gray-500">Sold</p>
+            <p className="text-xs text-gray-500">Balance</p>
           </div>
           <div className="glass rounded-2xl p-3 text-center">
             <p className="text-lg font-bold text-white">💜</p>
@@ -69,10 +69,10 @@ export default function Profile() {
       <div className="px-5 mb-6">
         <div className="revolut-gradient rounded-2xl p-5 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full" />
-          <p className="text-sm font-semibold text-white mb-1">Invită prieteni, câștigă EFI</p>
-          <p className="text-xs text-white/70 mb-3">Primești Ɛ50 pentru fiecare prieten invitat</p>
+          <p className="text-sm font-semibold text-white mb-1">Invite friends, earn EFI</p>
+          <p className="text-xs text-white/70 mb-3">Get Ɛ50 for every friend you invite</p>
           <button className="px-4 py-2 bg-white/20 rounded-xl text-xs font-semibold text-white">
-            Distribuie link-ul
+            Share your link
           </button>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function Profile() {
           <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400">
             <LogOut size={18} />
           </div>
-          <span className="text-sm font-medium text-red-400">Deconectare</span>
+          <span className="text-sm font-medium text-red-400">Sign out</span>
         </button>
       </div>
 

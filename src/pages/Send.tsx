@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import type { User } from '../store/useStore';
+import { notify } from '../utils/notify';
 
 const userGradients: Record<string, string> = {
   stefi: 'from-[#7c6af7] to-[#a78bfa]',
@@ -25,11 +26,13 @@ export default function Send() {
 
   const handleSend = () => {
     const num = parseFloat(amount);
-    if (!num || num <= 0) return setError('Introdu o sumă validă');
-    if (!currentUser || num > currentUser.balance) return setError('Sold insuficient');
+    if (!num || num <= 0) return setError('Please enter a valid amount');
+    if (!currentUser || num > currentUser.balance) return setError('Insufficient balance');
     const ok = sendMoney(selected!.id, num);
-    if (ok) setStep('success');
-    else setError('Eroare la trimitere');
+    if (ok) {
+      notify('💸 Money Sent!', `You sent Ɛ${num.toLocaleString()} to ${selected!.name}`);
+      setStep('success');
+    } else setError('Transfer failed');
   };
 
   if (step === 'success') {
@@ -40,14 +43,14 @@ export default function Send() {
             <CheckCircle size={40} className="text-green-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Trimis! 🎉</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Sent! 🎉</h2>
             <p className="text-gray-400">
-              Ai trimis <span className="text-white font-semibold">Ɛ{parseFloat(amount).toLocaleString()}</span>{' '}
-              lui <span className="text-white font-semibold">{selected?.name}</span>
+              You sent <span className="text-white font-semibold">Ɛ{parseFloat(amount).toLocaleString()}</span>{' '}
+              to <span className="text-white font-semibold">{selected?.name}</span>
             </p>
           </div>
           <button onClick={() => navigate('/')} className="w-full py-4 bg-[#7c6af7] text-white font-semibold rounded-2xl">
-            Înapoi acasă
+            Back home
           </button>
         </div>
       </div>
@@ -61,7 +64,7 @@ export default function Send() {
           <button onClick={() => setStep('contacts')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
             <ArrowLeft size={18} className="text-white" />
           </button>
-          <h1 className="text-lg font-semibold text-white">Trimite Efi Monede</h1>
+          <h1 className="text-lg font-semibold text-white">Send Efi Monede</h1>
         </div>
 
         <div className="px-5 flex flex-col items-center gap-6">
@@ -89,7 +92,7 @@ export default function Send() {
                 autoFocus
               />
             </div>
-            <p className="text-sm text-gray-500">Sold: Ɛ{currentUser?.balance.toLocaleString()}</p>
+            <p className="text-sm text-gray-500">Balance: Ɛ{currentUser?.balance.toLocaleString()}</p>
             {error && <p className="text-sm text-red-400 mt-1">{error}</p>}
           </div>
 
@@ -108,7 +111,7 @@ export default function Send() {
             disabled={!amount || parseFloat(amount) <= 0}
             className="w-full py-4 bg-[#7c6af7] disabled:opacity-40 text-white font-semibold rounded-2xl transition-opacity"
           >
-            Trimite Ɛ{amount || '0'}
+            Send Ɛ{amount || '0'}
           </button>
         </div>
       </div>
@@ -121,11 +124,11 @@ export default function Send() {
         <button onClick={() => navigate('/')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
           <ArrowLeft size={18} className="text-white" />
         </button>
-        <h1 className="text-lg font-semibold text-white">Trimite la</h1>
+        <h1 className="text-lg font-semibold text-white">Send to</h1>
       </div>
 
       <div className="px-5">
-        <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Prietenii tăi</p>
+        <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Your friends</p>
         <div className="glass rounded-2xl overflow-hidden">
           {contacts.map((contact) => (
             <button

@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { ArrowLeft, CheckCircle, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { notify } from '../utils/notify';
+
 interface LifeCurrency {
   id: string;
   name: string;
   emoji: string;
   description: string;
-  cost: number; // cost in EFI
+  cost: number;
   color: string;
   bgColor: string;
 }
@@ -15,72 +17,72 @@ interface LifeCurrency {
 const lifeCurrencies: LifeCurrency[] = [
   {
     id: 'iesire',
-    name: 'Ieșire în oraș',
+    name: 'Night Out',
     emoji: '🌆',
-    description: 'O seară perfectă cu prietenii',
+    description: 'A perfect evening with friends',
     cost: 150,
     color: 'text-orange-400',
     bgColor: 'bg-orange-500/15',
   },
   {
     id: 'iubire',
-    name: 'Iubire',
+    name: 'Love',
     emoji: '❤️',
-    description: 'Un moment de iubire pură',
+    description: 'A pure moment of love',
     cost: 999,
     color: 'text-red-400',
     bgColor: 'bg-red-500/15',
   },
   {
     id: 'imbratisare',
-    name: 'Îmbrățișare',
+    name: 'Hug',
     emoji: '🤗',
-    description: 'O îmbrățișare caldă și lungă',
+    description: 'A warm and long embrace',
     cost: 50,
     color: 'text-pink-400',
     bgColor: 'bg-pink-500/15',
   },
   {
     id: 'cafea',
-    name: 'Cafea cu o prietenă',
+    name: 'Coffee Date',
     emoji: '☕',
-    description: 'Povești și râsete la cafea',
+    description: 'Stories and laughs over coffee',
     cost: 80,
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-500/15',
   },
   {
     id: 'vacanta',
-    name: 'Vacanță',
+    name: 'Vacation',
     emoji: '✈️',
-    description: 'O escapadă de neuitat',
+    description: 'An unforgettable getaway',
     cost: 2000,
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/15',
   },
   {
     id: 'rasete',
-    name: 'Râsete',
+    name: 'Laughter',
     emoji: '😂',
-    description: 'Un hohot de râs sincer',
+    description: 'A genuine burst of laughter',
     cost: 30,
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-500/15',
   },
   {
     id: 'dans',
-    name: 'Dans',
+    name: 'Dance',
     emoji: '💃',
-    description: 'O noapte de dans și energie',
+    description: 'A night of dancing and energy',
     cost: 120,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/15',
   },
   {
     id: 'surpriza',
-    name: 'Surpriză',
+    name: 'Surprise',
     emoji: '🎁',
-    description: 'Un cadou neașteptat',
+    description: 'An unexpected little gift',
     cost: 200,
     color: 'text-green-400',
     bgColor: 'bg-green-500/15',
@@ -103,10 +105,11 @@ export default function Exchange() {
   const handleExchange = () => {
     if (!selected) return;
     if (total > user.balance) {
-      setError('Sold insuficient! 😢');
+      setError('Not enough balance 😢');
       return;
     }
     useStore.getState().spendForLife(selected.id, selected.name, selected.emoji, qty, total);
+    notify('✨ Exchange Complete!', `You got ${qty}x ${selected.name} for Ɛ${total.toLocaleString()}`);
     setDone(true);
   };
 
@@ -119,22 +122,22 @@ export default function Exchange() {
             <CheckCircle size={32} className="text-green-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Schimb reușit! 🎉</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Exchange complete! 🎉</h2>
             <p className="text-gray-400">
-              Ai obținut{' '}
+              You got{' '}
               <span className="text-white font-bold">{qty}x {selected.name}</span>
               <br />
-              pentru <span className="text-[#7c6af7] font-bold">Ɛ{total.toLocaleString()}</span>
+              for <span className="text-[#7c6af7] font-bold">Ɛ{total.toLocaleString()}</span>
             </p>
           </div>
           <button
             onClick={() => { setDone(false); setSelected(null); setQty(1); setError(''); }}
             className="w-full py-4 bg-[#7c6af7] text-white font-semibold rounded-2xl"
           >
-            Schimbă din nou
+            Exchange again
           </button>
           <button onClick={() => navigate('/')} className="text-sm text-gray-500">
-            Înapoi acasă
+            Back home
           </button>
         </div>
       </div>
@@ -148,14 +151,14 @@ export default function Exchange() {
           <ArrowLeft size={18} className="text-white" />
         </button>
         <div>
-          <h1 className="text-lg font-semibold text-white">Schimbă EFI</h1>
-          <p className="text-xs text-gray-500">Transformă monede în momente 💜</p>
+          <h1 className="text-lg font-semibold text-white">Exchange EFI</h1>
+          <p className="text-xs text-gray-500">Turn coins into moments 💜</p>
         </div>
       </div>
 
       {/* Balance pill */}
       <div className="mx-5 mt-4 mb-5 px-4 py-2.5 glass rounded-2xl flex items-center justify-between">
-        <span className="text-sm text-gray-400">Soldul tău</span>
+        <span className="text-sm text-gray-400">Your balance</span>
         <span className="text-sm font-bold text-white">Ɛ{user.balance.toLocaleString()}</span>
       </div>
 
@@ -163,7 +166,7 @@ export default function Exchange() {
       <div className="px-5">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles size={14} className="text-[#7c6af7]" />
-          <p className="text-xs text-gray-400 uppercase tracking-widest">Alege ce vrei</p>
+          <p className="text-xs text-gray-400 uppercase tracking-widest">Pick what you want</p>
         </div>
         <div className="grid grid-cols-2 gap-3 mb-6">
           {lifeCurrencies.map((lc) => (
@@ -191,13 +194,13 @@ export default function Exchange() {
               <span className="text-3xl">{selected.emoji}</span>
               <div>
                 <p className="text-sm font-semibold text-white">{selected.name}</p>
-                <p className="text-xs text-gray-500">Ɛ{selected.cost} per bucată</p>
+                <p className="text-xs text-gray-500">Ɛ{selected.cost} each</p>
               </div>
             </div>
 
             {/* Quantity */}
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-400">Cantitate</span>
+              <span className="text-sm text-gray-400">Quantity</span>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQty(Math.max(1, qty - 1))}
@@ -223,7 +226,7 @@ export default function Exchange() {
               disabled={total > user.balance}
               className="w-full py-3.5 bg-[#7c6af7] disabled:opacity-40 text-white font-semibold rounded-xl"
             >
-              Schimbă acum ✨
+              Exchange now ✨
             </button>
           </div>
         )}

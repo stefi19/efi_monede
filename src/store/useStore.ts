@@ -32,6 +32,13 @@ export interface User {
   lifeItems: LifeItem[];
 }
 
+export interface ChatMessage {
+  id: string;
+  fromUserId: string;
+  text: string;
+  date: string;
+}
+
 export interface Currency {
   code: string;
   name: string;
@@ -44,6 +51,7 @@ interface StoreState {
   users: User[];
   currentUserId: string | null;
   balanceVisible: boolean;
+  messages: ChatMessage[];
 
   login: (userId: string, pin: string) => boolean;
   logout: () => void;
@@ -52,6 +60,7 @@ interface StoreState {
   addBalance: (amount: number) => void;
   spendForLife: (itemId: string, name: string, emoji: string, qty: number, total: number) => void;
   getCurrentUser: () => User | null;
+  sendMessage: (text: string) => void;
 }
 
 const initialUsers: User[] = [
@@ -79,7 +88,7 @@ const initialUsers: User[] = [
         type: 'send',
         amount: 200,
         currency: 'EFI',
-        description: 'Trimis la Mara',
+        description: 'Sent to Mara',
         counterparty: 'Mara',
         date: '2026-05-10T14:00:00',
         category: 'transfer',
@@ -89,7 +98,7 @@ const initialUsers: User[] = [
         type: 'receive',
         amount: 150,
         currency: 'EFI',
-        description: 'Primit de la Adriana',
+        description: 'Received from Adriana',
         counterparty: 'Adriana',
         date: '2026-05-12T09:00:00',
         category: 'transfer',
@@ -121,7 +130,7 @@ const initialUsers: User[] = [
         type: 'receive',
         amount: 200,
         currency: 'EFI',
-        description: 'Primit de la Stefi',
+        description: 'Received from Stefi',
         counterparty: 'Stefi',
         date: '2026-05-10T14:00:00',
         category: 'transfer',
@@ -131,7 +140,7 @@ const initialUsers: User[] = [
         type: 'send',
         amount: 100,
         currency: 'EFI',
-        description: 'Trimis la Adriana',
+        description: 'Sent to Adriana',
         counterparty: 'Adriana',
         date: '2026-05-15T11:00:00',
         category: 'transfer',
@@ -163,7 +172,7 @@ const initialUsers: User[] = [
         type: 'send',
         amount: 150,
         currency: 'EFI',
-        description: 'Trimis la Stefi',
+        description: 'Sent to Stefi',
         counterparty: 'Stefi',
         date: '2026-05-12T09:00:00',
         category: 'transfer',
@@ -173,7 +182,7 @@ const initialUsers: User[] = [
         type: 'receive',
         amount: 100,
         currency: 'EFI',
-        description: 'Primit de la Mara',
+        description: 'Received from Mara',
         counterparty: 'Mara',
         date: '2026-05-15T11:00:00',
         category: 'transfer',
@@ -197,10 +206,13 @@ export const useStore = create<StoreState>()(
       users: initialUsers,
       currentUserId: null,
       balanceVisible: true,
+      messages: [],
 
       getCurrentUser: () => {
         const { users, currentUserId } = get();
-        return users.find((u) => u.id === currentUserId) ?? null;
+        const user = users.find((u) => u.id === currentUserId) ?? null;
+        if (!user) return null;
+        return { ...user, lifeItems: user.lifeItems ?? [] };
       },
 
       login: (userId, pin) => {
@@ -230,7 +242,7 @@ export const useStore = create<StoreState>()(
           type: 'send',
           amount,
           currency: 'EFI',
-          description: `Trimis la ${toUser.name}`,
+          description: `Sent to ${toUser.name}`,
           counterparty: toUser.name,
           date: now,
           category: 'transfer',
@@ -240,7 +252,7 @@ export const useStore = create<StoreState>()(
           type: 'receive',
           amount,
           currency: 'EFI',
-          description: `Primit de la ${fromUser.name}`,
+          description: `Received from ${fromUser.name}`,
           counterparty: fromUser.name,
           date: now,
           category: 'transfer',
@@ -306,14 +318,15 @@ export const useStore = create<StoreState>()(
         set({
           users: users.map((u) => {
             if (u.id !== currentUserId) return u;
-            const existing = u.lifeItems.find((li) => li.id === itemId);
+            const items = u.lifeItems ?? [];
+            const existing = items.find((li) => li.id === itemId);
             const updatedItems = existing
-              ? u.lifeItems.map((li) =>
+              ? items.map((li) =>
                   li.id === itemId
                     ? { ...li, qty: li.qty + qty, totalSpent: li.totalSpent + total }
                     : li
                 )
-              : [...u.lifeItems, { id: itemId, name, emoji, qty, totalSpent: total }];
+              : [...items, { id: itemId, name, emoji, qty, totalSpent: total }];
             return {
               ...u,
               balance: u.balance - total,
@@ -322,6 +335,18 @@ export const useStore = create<StoreState>()(
             };
           }),
         });
+      },
+
+      sendMessage: (text) => {
+        const { currentUserId } = get();
+        if (!currentUserId) return;
+        const msg: ChatMessage = {
+          id: Date.now().toString(),
+          fromUserId: currentUserId,
+          text,
+          date: new Date().toISOString(),
+        };
+        set((s) => ({ messages: [...s.messages, msg] }));
       },
     }),
     { name: 'efi-monede-store' }
