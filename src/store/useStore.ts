@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { notify } from '../utils/notify';
+import { saveRemoteState } from '../lib/sync';
+
+// After every mutation that changes users or messages, push to Firestore.
+function syncAfter(users: User[], messages: ChatMessage[]) {
+  saveRemoteState(users, messages);
+}
 
 export interface Transaction {
   id: string;
@@ -63,9 +69,11 @@ interface StoreState {
   getCurrentUser: () => User | null;
   postSystemMessage: (text: string) => void;
   sendMessage: (text: string) => void;
+  /** Called by the Firestore listener — applies remote state without re-saving */
+  _applyRemote: (users: User[], messages: ChatMessage[]) => void;
 }
 
-const initialUsers: User[] = [
+export const initialUsers: User[] = [
   {
     id: 'stefi',
     name: 'Stefi',
@@ -217,6 +225,11 @@ export const useStore = create<StoreState>()(
         return { ...user, lifeItems: user.lifeItems ?? [] };
       },
 
+      // ── Applied by the Firestore real-time listener ──────────────────────
+      _applyRemote: (users, messages) => {
+        set({ users, messages });
+      },
+
       login: (userId, pin) => {
         const { users } = get();
         const user = users.find((u) => u.id === userId);
@@ -260,25 +273,17 @@ export const useStore = create<StoreState>()(
           category: 'transfer',
         };
 
-        set({
-          users: users.map((u) => {
-            if (u.id === currentUserId) {
-              return {
-                ...u,
-                balance: u.balance - amount,
-                transactions: [sendTx, ...u.transactions],
-              };
-            }
-            if (u.id === toUserId) {
-              return {
-                ...u,
-                balance: u.balance + amount,
-                transactions: [receiveTx, ...u.transactions],
-              };
-            }
-            return u;
-          }),
+        const newUsers = users.map((u) => {
+          if (u.id === currentUserId) {
+            return { ...u, balance: u.balance - amount, transactions: [sendTx, ...u.transactions] };
+          }
+          if (u.id === toUserId) {
+            return { ...u, balance: u.balance + amount, transactions: [receiveTx, ...u.transactions] };
+          }
+          return u;
         });
+        set({ users: newUsers });
+        syncAfter(newUsers, get().messages);
         return true;
       },
 
@@ -295,13 +300,13 @@ export const useStore = create<StoreState>()(
           date: now,
           category: 'topup',
         };
-        set({
-          users: users.map((u) =>
-            u.id === currentUserId
-              ? { ...u, balance: u.balance + amount, transactions: [tx, ...u.transactions] }
-              : u
-          ),
-        });
+        const newUsers = users.map((u) =>
+          u.id === currentUserId
+            ? { ...u, balance: u.balance + amount, transactions: [tx, ...u.transactions] }
+            : u
+        );
+        set({ users: newUsers });
+        syncAfter(newUsers, get().messages);
       },
 
       spendForLife: (itemId, name, emoji, qty, total) => {
@@ -317,28 +322,27 @@ export const useStore = create<StoreState>()(
           date: now,
           category: 'exchange',
         };
-        set({
-          users: users.map((u) => {
-            if (u.id !== currentUserId) return u;
-            const items = u.lifeItems ?? [];
-            const existing = items.find((li) => li.id === itemId);
-            const updatedItems = existing
-              ? items.map((li) =>
-                  li.id === itemId
-                    ? { ...li, qty: li.qty + qty, totalSpent: li.totalSpent + total }
-                    : li
-                )
-              : [...items, { id: itemId, name, emoji, qty, totalSpent: total }];
-            return {
-              ...u,
-              balance: u.balance - total,
-              transactions: [tx, ...u.transactions],
-              lifeItems: updatedItems,
-            };
-          }),
+        const newUsers = users.map((u) => {
+          if (u.id !== currentUserId) return u;
+          const items = u.lifeItems ?? [];
+          const existing = items.find((li) => li.id === itemId);
+          const updatedItems = existing
+            ? items.map((li) =>
+                li.id === itemId
+                  ? { ...li, qty: li.qty + qty, totalSpent: li.totalSpent + total }
+                  : li
+              )
+            : [...items, { id: itemId, name, emoji, qty, totalSpent: total }];
+          return {
+            ...u,
+            balance: u.balance - total,
+            transactions: [tx, ...u.transactions],
+            lifeItems: updatedItems,
+          };
         });
+        set({ users: newUsers });
 
-        // Post a system message to the group chat
+        // Post system message to group chat
         const buyer = users.find((u) => u.id === currentUserId);
         if (buyer) {
           const qtyLabel = qty > 1 ? `${qty}x ` : '';
@@ -348,8 +352,12 @@ export const useStore = create<StoreState>()(
             text: `${buyer.name} just bought ${qtyLabel}${name} ${emoji} for Ɛ${total.toLocaleString()} 💜`,
             date: now,
           };
-          set((s) => ({ messages: [...s.messages, systemMsg] }));
+          const newMessages = [...get().messages, systemMsg];
+          set({ messages: newMessages });
+          syncAfter(newUsers, newMessages);
           notify('🎉 Life moment!', `${buyer.name} bought ${qtyLabel}${name} ${emoji}`);
+        } else {
+          syncAfter(newUsers, get().messages);
         }
       },
 
@@ -360,7 +368,9 @@ export const useStore = create<StoreState>()(
           text,
           date: new Date().toISOString(),
         };
-        set((s) => ({ messages: [...s.messages, msg] }));
+        const newMessages = [...get().messages, msg];
+        set({ messages: newMessages });
+        syncAfter(get().users, newMessages);
       },
 
       sendMessage: (text) => {
@@ -372,17 +382,24 @@ export const useStore = create<StoreState>()(
           text,
           date: new Date().toISOString(),
         };
-        set((s) => ({ messages: [...s.messages, msg] }));
-        // Notify locally (sender) immediately
+        const newMessages = [...get().messages, msg];
+        set({ messages: newMessages });
+        syncAfter(get().users, newMessages);
         try {
-          const users = get().users;
-          const sender = users.find((u) => u.id === currentUserId);
-          notify(sender ? `${sender.name} (you)` : 'New message', text);
-        } catch (e) {
-          // ignore notify errors
+          const sender = get().users.find((u) => u.id === currentUserId);
+          notify(sender ? `${sender.name}` : 'New message', text);
+        } catch {
+          // ignore
         }
       },
     }),
-    { name: 'efi-monede-store' }
+    {
+      name: 'efi-monede-session',
+      // Only persist login session — users & messages come from Firestore
+      partialize: (state) => ({
+        currentUserId: state.currentUserId,
+        balanceVisible: state.balanceVisible,
+      }),
+    }
   )
 );

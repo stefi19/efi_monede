@@ -4,32 +4,44 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { notify } from './utils/notify';
+import { loadRemoteState, subscribeToRemoteState, saveRemoteState } from './lib/sync';
+import { useStore, initialUsers } from './store/useStore';
 
-// Listen for cross-tab message additions and show a notification
-window.addEventListener('storage', (e) => {
-  try {
-    if (e.key === 'efi-monede-store') {
-      const newVal = e.newValue;
-      if (!newVal) return;
-      const parsed = JSON.parse(newVal);
-      const messages = parsed.state?.messages ?? parsed.messages ?? [];
-      const last = messages?.[messages.length - 1];
-      if (last) {
-        // Try to find sender name from stored users
-        const users = parsed.state?.users ?? parsed.users ?? [];
-        const sender = users.find((u: any) => u.id === last.fromUserId);
-        notify(sender ? `${sender.name}` : 'New message', last.text);
-      }
-    }
-  } catch (err) {
-    // ignore
+// ── Bootstrap: load Firestore state once, then subscribe for real-time updates
+async function initSync() {
+  const applyRemote = useStore.getState()._applyRemote;
+
+  // 1. Load current state from Firestore
+  const remote = await loadRemoteState();
+
+  if (remote) {
+    // Firestore has data → hydrate store
+    applyRemote(remote.users, remote.messages);
+  } else {
+    // First ever run → seed Firestore with initial users + empty messages
+    await saveRemoteState(initialUsers, []);
   }
-});
 
-registerSW({ immediate: true })
+  // 2. Subscribe to real-time changes from other devices
+  subscribeToRemoteState((users, messages) => {
+    useStore.getState()._applyRemote(users, messages);
+
+    // Notify for the latest incoming message
+    const last = messages[messages.length - 1];
+    if (last) {
+      const sender = users.find((u) => u.id === last.fromUserId);
+      const title  = last.fromUserId === 'system' ? '🔔 Efi Monede' : (sender?.name ?? 'New message');
+      notify(title, last.text);
+    }
+  });
+}
+
+initSync();
+
+registerSW({ immediate: true });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>,
-)
+);
