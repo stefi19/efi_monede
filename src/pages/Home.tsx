@@ -46,9 +46,9 @@ export default function Home() {
   const totalOut = user.transactions.filter(t => t.type === 'send').reduce((s, t) => s + t.amount, 0);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
+    <div className="flex flex-col min-h-full bg-[#0a0a0a] pb-safe-nav">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-12 pb-4">
+      <div className="flex items-center justify-between px-5 pt-4 pb-4">
         <div className="flex items-center gap-3">
           <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGradients[user.id] ?? 'revolut-gradient'} flex items-center justify-center text-sm font-bold text-white`}>
             {user.avatar}

@@ -33,8 +33,8 @@ export default function Analytics() {
   }));
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav overflow-y-auto">
-      <div className="px-5 pt-12 pb-4">
+    <div className="flex flex-col min-h-full bg-[#0a0a0a] pb-safe-nav overflow-y-auto">
+      <div className="px-5 pt-4 pb-4">
         <h1 className="text-xl font-bold text-white">Analytics</h1>
         <p className="text-sm text-gray-500 mt-1">Your life in Efi Monede 💜</p>
       </div>

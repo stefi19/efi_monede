@@ -50,7 +50,7 @@ export default function Login() {
   const selectedUserObj = users.find((u) => u.id === selectedUser);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-between py-16 px-5">
+    <div className="flex flex-col min-h-full bg-[#0a0a0a] items-center justify-between py-16 px-5">
       {/* Logo */}
       <div className="flex flex-col items-center gap-3">
         <div className="w-16 h-16 rounded-2xl revolut-gradient flex items-center justify-center text-3xl shadow-lg">

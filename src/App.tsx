@@ -21,7 +21,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="max-w-md mx-auto min-h-screen bg-[#0a0a0a] relative">
+      <div className="max-w-md mx-auto h-full bg-[#0a0a0a] relative overflow-y-auto overflow-x-hidden scrollbar-hide">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />

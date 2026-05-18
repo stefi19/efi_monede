@@ -84,7 +84,7 @@ export default function Exchange() {
   // ── Done screen ────────────────────────────────────────────────────────────
   if (mode === 'done' && selected) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center px-5 pb-safe-nav">
+      <div className="flex flex-col min-h-full bg-[#0a0a0a] items-center justify-center px-5 pb-safe-nav">
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="text-7xl animate-bounce">{selected.emoji}</div>
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -122,8 +122,8 @@ export default function Exchange() {
   // ── Pick recipient screen ──────────────────────────────────────────────────
   if (mode === 'pick-recipient' && selected) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
-        <div className="flex items-center gap-4 px-5 pt-12 pb-4">
+      <div className="flex flex-col min-h-full bg-[#0a0a0a] pb-safe-nav">
+        <div className="flex items-center gap-4 px-5 pt-4 pb-4">
           <button onClick={() => setMode('detail')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
             <ArrowLeft size={18} className="text-white" />
           </button>
@@ -189,8 +189,8 @@ export default function Exchange() {
 
   // ── Main browse + detail screen ────────────────────────────────────────────
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
-      <div className="flex items-center gap-4 px-5 pt-12 pb-2">
+    <div className="flex flex-col min-h-full bg-[#0a0a0a] pb-safe-nav">
+      <div className="flex items-center gap-4 px-5 pt-4 pb-2">
         <button
           onClick={() => mode === 'detail' ? setMode('browse') : navigate('/')}
           className="w-9 h-9 glass rounded-full flex items-center justify-center"

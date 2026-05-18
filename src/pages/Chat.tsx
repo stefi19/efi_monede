@@ -29,13 +29,21 @@ function formatDay(dateStr: string) {
 }
 
 export default function Chat() {
-  const { messages, sendMessage, getCurrentUser, users } = useStore();
-  const currentUser = getCurrentUser();
+  const messages = useStore((s) => s.messages);
+  const users = useStore((s) => s.users);
+  const currentUserId = useStore((s) => s.currentUserId);
+  const sendMessage = useStore((s) => s.sendMessage);
+  const currentUser = users.find((u) => u.id === currentUserId);
+
   const [text, setText] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll within the messages container (not outer App scroll)
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const handleSend = () => {
@@ -52,15 +60,20 @@ export default function Chat() {
     }
   };
 
-  if (!currentUser) return null;
+  if (!currentUser) return (
+    <div className="flex items-center justify-center h-full bg-[#0a0a0a]">
+      <div className="w-8 h-8 border-2 border-[#7c6af7] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   // Group messages by day
   let lastDay = '';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a]">
+    // h-full = fills App's scroll container exactly → messages scroll INSIDE, not the whole page
+    <div className="flex flex-col h-full bg-[#0a0a0a]">
       {/* Header */}
-      <div className="px-5 pt-12 pb-4 border-b border-white/5">
+      <div className="flex-shrink-0 px-5 pt-4 pb-4 border-b border-white/5">
         <h1 className="text-xl font-bold text-white">Group Chat</h1>
         <div className="flex items-center gap-1.5 mt-1">
           {users.map((u) => (
@@ -75,8 +88,8 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 space-y-1">
+      {/* Messages — flex-1 + overflow-y-auto = scrolls within its own fixed height */}
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1 pb-28 scrollbar-hide">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
             <div className="text-5xl">💬</div>
@@ -158,8 +171,8 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="fixed left-0 right-0 max-w-md mx-auto px-4 py-3 bg-[#0a0a0a] border-t border-white/5" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
+      {/* Input — fixed above the BottomNav */}
+      <div className="fixed left-0 right-0 max-w-md mx-auto px-4 py-3 bg-[#0a0a0a]/95 border-t border-white/5 backdrop-blur-xl" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
         <div className="flex items-center gap-3 glass rounded-2xl px-4 py-2.5">
           <input
             type="text"

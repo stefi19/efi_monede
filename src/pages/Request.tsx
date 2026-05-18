@@ -61,14 +61,14 @@ export default function Request() {
   // Show loading spinner instead of null so screen never goes black
   if (!currentUser) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center">
+      <div className="flex flex-col min-h-full bg-[#0a0a0a] items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-[#7c6af7] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
+    <div className="flex flex-col min-h-full bg-[#0a0a0a] pb-safe-nav">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
         <button
