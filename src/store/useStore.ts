@@ -12,6 +12,14 @@ export interface Transaction {
   category: 'food' | 'transport' | 'shopping' | 'entertainment' | 'transfer' | 'exchange' | 'topup';
 }
 
+export interface LifeItem {
+  id: string;
+  name: string;
+  emoji: string;
+  qty: number;
+  totalSpent: number;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -21,6 +29,7 @@ export interface User {
   balance: number;
   transactions: Transaction[];
   color: string;
+  lifeItems: LifeItem[];
 }
 
 export interface Currency {
@@ -41,6 +50,7 @@ interface StoreState {
   toggleBalanceVisible: () => void;
   sendMoney: (toUserId: string, amount: number) => boolean;
   addBalance: (amount: number) => void;
+  spendForLife: (itemId: string, name: string, emoji: string, qty: number, total: number) => void;
   getCurrentUser: () => User | null;
 }
 
@@ -85,6 +95,7 @@ const initialUsers: User[] = [
         category: 'transfer',
       },
     ],
+    lifeItems: [],
   },
   {
     id: 'mara',
@@ -126,6 +137,7 @@ const initialUsers: User[] = [
         category: 'transfer',
       },
     ],
+    lifeItems: [],
   },
   {
     id: 'adriana',
@@ -167,6 +179,7 @@ const initialUsers: User[] = [
         category: 'transfer',
       },
     ],
+    lifeItems: [],
   },
 ];
 
@@ -274,6 +287,40 @@ export const useStore = create<StoreState>()(
               ? { ...u, balance: u.balance + amount, transactions: [tx, ...u.transactions] }
               : u
           ),
+        });
+      },
+
+      spendForLife: (itemId, name, emoji, qty, total) => {
+        const { users, currentUserId } = get();
+        const now = new Date().toISOString();
+        const tx: Transaction = {
+          id: Date.now().toString(),
+          type: 'exchange',
+          amount: total,
+          currency: 'EFI',
+          description: `${qty}x ${name} ${emoji}`,
+          counterparty: 'Efi Life',
+          date: now,
+          category: 'exchange',
+        };
+        set({
+          users: users.map((u) => {
+            if (u.id !== currentUserId) return u;
+            const existing = u.lifeItems.find((li) => li.id === itemId);
+            const updatedItems = existing
+              ? u.lifeItems.map((li) =>
+                  li.id === itemId
+                    ? { ...li, qty: li.qty + qty, totalSpent: li.totalSpent + total }
+                    : li
+                )
+              : [...u.lifeItems, { id: itemId, name, emoji, qty, totalSpent: total }];
+            return {
+              ...u,
+              balance: u.balance - total,
+              transactions: [tx, ...u.transactions],
+              lifeItems: updatedItems,
+            };
+          }),
         });
       },
     }),

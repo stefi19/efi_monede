@@ -1,53 +1,140 @@
 import { useState } from 'react';
-import { ArrowLeft, ArrowUpDown, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useStore, useCurrencies } from '../store/useStore';
+import { useStore } from '../store/useStore';
+interface LifeCurrency {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  cost: number; // cost in EFI
+  color: string;
+  bgColor: string;
+}
+
+const lifeCurrencies: LifeCurrency[] = [
+  {
+    id: 'iesire',
+    name: 'Ieșire în oraș',
+    emoji: '🌆',
+    description: 'O seară perfectă cu prietenii',
+    cost: 150,
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-500/15',
+  },
+  {
+    id: 'iubire',
+    name: 'Iubire',
+    emoji: '❤️',
+    description: 'Un moment de iubire pură',
+    cost: 999,
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/15',
+  },
+  {
+    id: 'imbratisare',
+    name: 'Îmbrățișare',
+    emoji: '🤗',
+    description: 'O îmbrățișare caldă și lungă',
+    cost: 50,
+    color: 'text-pink-400',
+    bgColor: 'bg-pink-500/15',
+  },
+  {
+    id: 'cafea',
+    name: 'Cafea cu o prietenă',
+    emoji: '☕',
+    description: 'Povești și râsete la cafea',
+    cost: 80,
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-500/15',
+  },
+  {
+    id: 'vacanta',
+    name: 'Vacanță',
+    emoji: '✈️',
+    description: 'O escapadă de neuitat',
+    cost: 2000,
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/15',
+  },
+  {
+    id: 'rasete',
+    name: 'Râsete',
+    emoji: '😂',
+    description: 'Un hohot de râs sincer',
+    cost: 30,
+    color: 'text-yellow-400',
+    bgColor: 'bg-yellow-500/15',
+  },
+  {
+    id: 'dans',
+    name: 'Dans',
+    emoji: '💃',
+    description: 'O noapte de dans și energie',
+    cost: 120,
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/15',
+  },
+  {
+    id: 'surpriza',
+    name: 'Surpriză',
+    emoji: '🎁',
+    description: 'Un cadou neașteptat',
+    cost: 200,
+    color: 'text-green-400',
+    bgColor: 'bg-green-500/15',
+  },
+];
 
 export default function Exchange() {
   const navigate = useNavigate();
-  const currencies = useCurrencies();
-  const { balance } = useStore();
-
-  const [fromCurrency, setFromCurrency] = useState(currencies[0]);
-  const [toCurrency, setToCurrency] = useState(currencies[1]);
-  const [fromAmount, setFromAmount] = useState('');
+  const { getCurrentUser } = useStore();
+  const user = getCurrentUser();
+  const [selected, setSelected] = useState<LifeCurrency | null>(null);
+  const [qty, setQty] = useState(1);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
 
-  const rate = fromCurrency.rateToEFI / toCurrency.rateToEFI;
-  const toAmount = fromAmount ? (parseFloat(fromAmount) * rate).toFixed(4) : '';
+  if (!user) return null;
 
-  const swap = () => {
-    setFromCurrency(toCurrency);
-    setToCurrency(fromCurrency);
-    setFromAmount(toAmount);
-  };
+  const total = selected ? selected.cost * qty : 0;
 
   const handleExchange = () => {
+    if (!selected) return;
+    if (total > user.balance) {
+      setError('Sold insuficient! 😢');
+      return;
+    }
+    useStore.getState().spendForLife(selected.id, selected.name, selected.emoji, qty, total);
     setDone(true);
   };
 
-  if (done) {
+  if (done && selected) {
     return (
       <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center px-5 pb-24">
         <div className="flex flex-col items-center gap-6 text-center">
-          <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center">
-            <CheckCircle size={40} className="text-yellow-400" />
+          <div className="text-7xl animate-bounce">{selected.emoji}</div>
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+            <CheckCircle size={32} className="text-green-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Exchange Complete!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Schimb reușit! 🎉</h2>
             <p className="text-gray-400">
-              <span className="text-white font-semibold">{fromCurrency.symbol}{fromAmount} {fromCurrency.code}</span>{' '}
-              → <span className="text-white font-semibold">{toCurrency.symbol}{toAmount} {toCurrency.code}</span>
+              Ai obținut{' '}
+              <span className="text-white font-bold">{qty}x {selected.name}</span>
+              <br />
+              pentru <span className="text-[#7c6af7] font-bold">Ɛ{total.toLocaleString()}</span>
             </p>
           </div>
           <button
-            onClick={() => { setDone(false); setFromAmount(''); }}
-            className="w-full py-4 bg-[#f59e0b] text-white font-semibold rounded-2xl"
+            onClick={() => { setDone(false); setSelected(null); setQty(1); setError(''); }}
+            className="w-full py-4 bg-[#7c6af7] text-white font-semibold rounded-2xl"
           >
-            Make Another Exchange
+            Schimbă din nou
           </button>
-          <button onClick={() => navigate('/')} className="text-sm text-gray-400">
-            Back to Home
+          <button onClick={() => navigate('/')} className="text-sm text-gray-500">
+            Înapoi acasă
           </button>
         </div>
       </div>
@@ -56,116 +143,90 @@ export default function Exchange() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-24">
-      <div className="flex items-center gap-4 px-5 pt-12 pb-6">
+      <div className="flex items-center gap-4 px-5 pt-12 pb-2">
         <button onClick={() => navigate('/')} className="w-9 h-9 glass rounded-full flex items-center justify-center">
           <ArrowLeft size={18} className="text-white" />
         </button>
-        <h1 className="text-lg font-semibold text-white">Exchange</h1>
+        <div>
+          <h1 className="text-lg font-semibold text-white">Schimbă EFI</h1>
+          <p className="text-xs text-gray-500">Transformă monede în momente 💜</p>
+        </div>
       </div>
 
-      {/* Live rates banner */}
-      <div className="mx-5 mb-6 px-4 py-2 bg-[#7c6af7]/10 border border-[#7c6af7]/20 rounded-xl">
-        <p className="text-xs text-[#7c6af7] text-center">🔴 Live Efi Market Rates</p>
+      {/* Balance pill */}
+      <div className="mx-5 mt-4 mb-5 px-4 py-2.5 glass rounded-2xl flex items-center justify-between">
+        <span className="text-sm text-gray-400">Soldul tău</span>
+        <span className="text-sm font-bold text-white">Ɛ{user.balance.toLocaleString()}</span>
       </div>
 
-      {/* Exchange card */}
-      <div className="px-5 relative">
-        {/* From */}
-        <div className="glass rounded-2xl p-5 mb-1">
-          <p className="text-xs text-gray-500 mb-3">You send</p>
-          <div className="flex items-center justify-between">
-            <input
-              type="number"
-              value={fromAmount}
-              onChange={(e) => setFromAmount(e.target.value)}
-              placeholder="0"
-              className="text-3xl font-bold text-white bg-transparent outline-none w-40"
-              autoFocus
-            />
-            <select
-              value={fromCurrency.code}
-              onChange={(e) => {
-                const c = currencies.find((x) => x.code === e.target.value)!;
-                setFromCurrency(c);
-              }}
-              className="bg-white/10 text-white rounded-xl px-3 py-2 text-sm font-semibold outline-none"
+      {/* Life currencies grid */}
+      <div className="px-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles size={14} className="text-[#7c6af7]" />
+          <p className="text-xs text-gray-400 uppercase tracking-widest">Alege ce vrei</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {lifeCurrencies.map((lc) => (
+            <button
+              key={lc.id}
+              onClick={() => { setSelected(lc); setQty(1); setError(''); }}
+              className={`rounded-2xl p-4 text-left transition-all ${lc.bgColor} ${
+                selected?.id === lc.id
+                  ? 'ring-2 ring-[#7c6af7] scale-[1.02]'
+                  : 'hover:scale-[1.01]'
+              }`}
             >
-              {currencies.map((c) => (
-                <option key={c.code} value={c.code} className="bg-[#1a1a1a]">
-                  {c.flag} {c.code}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className="text-xs text-gray-600 mt-2">
-            Balance: {fromCurrency.symbol}{balance.toLocaleString()} {fromCurrency.code}
-          </p>
-        </div>
-
-        {/* Swap button */}
-        <div className="flex justify-center my-1 relative z-10">
-          <button
-            onClick={swap}
-            className="w-10 h-10 bg-[#7c6af7] rounded-full flex items-center justify-center shadow-lg"
-          >
-            <ArrowUpDown size={18} className="text-white" />
-          </button>
-        </div>
-
-        {/* To */}
-        <div className="glass rounded-2xl p-5 mb-6">
-          <p className="text-xs text-gray-500 mb-3">You receive</p>
-          <div className="flex items-center justify-between">
-            <span className="text-3xl font-bold text-white">{toAmount || '0'}</span>
-            <select
-              value={toCurrency.code}
-              onChange={(e) => {
-                const c = currencies.find((x) => x.code === e.target.value)!;
-                setToCurrency(c);
-              }}
-              className="bg-white/10 text-white rounded-xl px-3 py-2 text-sm font-semibold outline-none"
-            >
-              {currencies.filter((c) => c.code !== fromCurrency.code).map((c) => (
-                <option key={c.code} value={c.code} className="bg-[#1a1a1a]">
-                  {c.flag} {c.code}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className="text-xs text-gray-600 mt-2">
-            Rate: 1 {fromCurrency.code} = {rate.toFixed(4)} {toCurrency.code}
-          </p>
-        </div>
-
-        <button
-          onClick={handleExchange}
-          disabled={!fromAmount || parseFloat(fromAmount) <= 0}
-          className="w-full py-4 bg-[#f59e0b] disabled:opacity-40 text-white font-semibold rounded-2xl"
-        >
-          Exchange Now
-        </button>
-      </div>
-
-      {/* Currency rates */}
-      <div className="px-5 mt-8">
-        <h2 className="text-sm font-semibold text-gray-400 mb-3">All Rates vs EFI</h2>
-        <div className="glass rounded-2xl overflow-hidden">
-          {currencies.slice(1).map((c) => (
-            <div key={c.code} className="flex items-center justify-between px-4 py-3.5 border-b border-white/5 last:border-0">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{c.flag}</span>
-                <div>
-                  <p className="text-sm font-medium text-white">{c.name}</p>
-                  <p className="text-xs text-gray-500">{c.code}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-white">{c.rateToEFI} EFI</p>
-                <p className="text-xs text-green-400">+{(Math.random() * 2).toFixed(2)}%</p>
-              </div>
-            </div>
+              <div className="text-3xl mb-2">{lc.emoji}</div>
+              <p className={`text-sm font-semibold ${lc.color}`}>{lc.name}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{lc.description}</p>
+              <p className="text-xs font-bold text-white mt-2">Ɛ{lc.cost}</p>
+            </button>
           ))}
         </div>
+
+        {/* Selected item details */}
+        {selected && (
+          <div className="glass rounded-2xl p-5 mb-4">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">{selected.emoji}</span>
+              <div>
+                <p className="text-sm font-semibold text-white">{selected.name}</p>
+                <p className="text-xs text-gray-500">Ɛ{selected.cost} per bucată</p>
+              </div>
+            </div>
+
+            {/* Quantity */}
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-gray-400">Cantitate</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="w-8 h-8 glass rounded-full flex items-center justify-center text-white font-bold"
+                >−</button>
+                <span className="text-white font-bold w-6 text-center">{qty}</span>
+                <button
+                  onClick={() => setQty(qty + 1)}
+                  className="w-8 h-8 bg-[#7c6af7] rounded-full flex items-center justify-center text-white font-bold"
+                >+</button>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center border-t border-white/10 pt-3 mb-4">
+              <span className="text-sm text-gray-400">Total</span>
+              <span className="text-lg font-bold text-white">Ɛ{total.toLocaleString()}</span>
+            </div>
+
+            {error && <p className="text-sm text-red-400 mb-3 text-center">{error}</p>}
+
+            <button
+              onClick={handleExchange}
+              disabled={total > user.balance}
+              className="w-full py-3.5 bg-[#7c6af7] disabled:opacity-40 text-white font-semibold rounded-xl"
+            >
+              Schimbă acum ✨
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
