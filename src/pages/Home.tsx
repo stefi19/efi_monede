@@ -20,14 +20,17 @@ const userGradients: Record<string, string> = {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { balanceVisible, toggleBalanceVisible, getCurrentUser } = useStore();
-  const user = getCurrentUser();
+  const balanceVisible = useStore((s) => s.balanceVisible);
+  const toggleBalanceVisible = useStore((s) => s.toggleBalanceVisible);
+  const users = useStore((s) => s.users);
+  const currentUserId = useStore((s) => s.currentUserId);
+  const user = users.find((u) => u.id === currentUserId);
+
   const [showAll, setShowAll] = useState(false);
   const [notifPerm, setNotifPerm] = useState<NotificationPermission>(
     'Notification' in window ? Notification.permission : 'denied'
   );
 
-  // On mount try silently — works on desktop; on iOS this is a no-op without gesture
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'granted') {
       setNotifPerm('granted');
@@ -39,18 +42,24 @@ export default function Home() {
     setNotifPerm(granted ? 'granted' : 'denied');
   }
 
-  if (!user) return null;
+  if (!user) return (
+    <div className="flex items-center justify-center h-full bg-[#0a0a0a]">
+      <div className="w-8 h-8 border-2 border-[#7c6af7] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   const displayed = showAll ? user.transactions : user.transactions.slice(0, 5);
-  const totalIn = user.transactions.filter(t => t.type === 'receive' || t.type === 'topup').reduce((s, t) => s + t.amount, 0);
+  const totalIn  = user.transactions.filter(t => t.type === 'receive' || t.type === 'topup').reduce((s, t) => s + t.amount, 0);
   const totalOut = user.transactions.filter(t => t.type === 'send').reduce((s, t) => s + t.amount, 0);
 
   return (
+    // min-h-full so content can scroll in the App wrapper; pb-safe-nav clears the fixed BottomNav
     <div className="flex flex-col min-h-full bg-[#0a0a0a] pb-safe-nav">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-4">
+
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-5 pt-4 pb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGradients[user.id] ?? 'revolut-gradient'} flex items-center justify-center text-sm font-bold text-white`}>
+          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGradients[user.id] ?? 'revolut-gradient'} flex items-center justify-center text-sm font-bold text-white flex-shrink-0`}>
             {user.avatar}
           </div>
           <div>
@@ -60,7 +69,7 @@ export default function Home() {
         </div>
         <button
           onClick={handleBellClick}
-          className="relative w-9 h-9 rounded-full glass flex items-center justify-center"
+          className="relative w-9 h-9 rounded-full glass flex items-center justify-center flex-shrink-0"
           title={notifPerm === 'granted' ? 'Notifications on' : 'Enable notifications'}
         >
           <Bell size={18} className={notifPerm === 'granted' ? 'text-[#7c6af7]' : 'text-gray-500'} />
@@ -73,9 +82,9 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Balance Card */}
-      <div className="mx-5 mb-6">
-        <div className="rounded-2xl p-6 card-gradient relative overflow-hidden">
+      {/* ── Balance Card ──────────────────────────────────────────────────── */}
+      <div className="mx-5 mb-4">
+        <div className="rounded-2xl p-5 card-gradient relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#7c6af7] rounded-full blur-3xl" />
             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500 rounded-full blur-3xl" />
@@ -87,7 +96,7 @@ export default function Home() {
                 {balanceVisible ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
             </div>
-            <div className="flex items-baseline gap-2 mb-4">
+            <div className="flex items-baseline gap-2 mb-3">
               <span className="text-3xl font-bold text-white">
                 {balanceVisible ? `Ɛ${user.balance.toLocaleString()}` : '••••••'}
               </span>
@@ -103,11 +112,11 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="px-5 mb-6">
-        <div className="grid grid-cols-4 gap-3">
+      {/* ── Quick Actions ─────────────────────────────────────────────────── */}
+      <div className="px-5 mb-4">
+        <div className="grid grid-cols-4 gap-2">
           {quickActions.map(({ label, icon: Icon, color, to }) => (
-            <button key={label} onClick={() => navigate(to)} className="flex flex-col items-center gap-2">
+            <button key={label} onClick={() => navigate(to)} className="flex flex-col items-center gap-1.5">
               <div className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center shadow-lg`}>
                 <Icon size={22} className="text-white" />
               </div>
@@ -117,16 +126,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="px-5 mb-6">
+      {/* ── Stats Row ─────────────────────────────────────────────────────── */}
+      <div className="px-5 mb-4">
         <div className="grid grid-cols-2 gap-3">
-          <div className="glass rounded-2xl p-4">
+          <div className="glass rounded-2xl p-3">
             <p className="text-xs text-gray-500 mb-1">Received</p>
             <p className="text-lg font-bold text-green-400">
               {balanceVisible ? `Ɛ${totalIn.toLocaleString()}` : '••••'}
             </p>
           </div>
-          <div className="glass rounded-2xl p-4">
+          <div className="glass rounded-2xl p-3">
             <p className="text-xs text-gray-500 mb-1">Sent</p>
             <p className="text-lg font-bold text-red-400">
               {balanceVisible ? `Ɛ${totalOut.toLocaleString()}` : '••••'}
@@ -135,7 +144,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Transactions */}
+      {/* ── Transactions ──────────────────────────────────────────────────── */}
       <div className="px-5">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold text-white">Recent transactions</h2>
@@ -152,6 +161,7 @@ export default function Home() {
           )}
         </div>
       </div>
+
     </div>
   );
 }

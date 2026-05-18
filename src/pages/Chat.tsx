@@ -70,8 +70,13 @@ export default function Chat() {
   let lastDay = '';
 
   return (
-    // h-full = fills App's scroll container exactly → messages scroll INSIDE, not the whole page
-    <div className="flex flex-col h-full bg-[#0a0a0a]">
+    // Outer div fills the App wrapper's full height.
+    // paddingBottom reserves space for the fixed BottomNav (64px) + iOS home indicator.
+    // This way the flex column (header + messages + input) all stay visible above the nav.
+    <div
+      className="flex flex-col bg-[#0a0a0a]"
+      style={{ height: '100%', paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}
+    >
       {/* Header */}
       <div className="flex-shrink-0 px-5 pt-4 pb-4 border-b border-white/5">
         <h1 className="text-xl font-bold text-white">Group Chat</h1>
@@ -88,8 +93,8 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Messages — flex-1 + overflow-y-auto = scrolls within its own fixed height */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1 pb-28 scrollbar-hide">
+      {/* Messages — flex-1 means it takes all remaining height; scrolls internally */}
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1 scrollbar-hide">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
             <div className="text-5xl">💬</div>
@@ -108,7 +113,6 @@ export default function Chat() {
           const prevMsg = messages[i - 1];
           const showAvatar = !isMe && !isSystem && (i === 0 || prevMsg?.fromUserId !== msg.fromUserId);
 
-          // System announcement (life moment purchase)
           if (isSystem) {
             return (
               <div key={msg.id}>
@@ -134,12 +138,9 @@ export default function Chat() {
                 </div>
               )}
               <div className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                {/* Avatar placeholder for alignment */}
                 {!isMe && (
                   <div className={`w-7 h-7 flex-shrink-0 ${showAvatar ? '' : 'invisible'}`}>
-                    <div
-                      className={`w-7 h-7 rounded-full bg-gradient-to-br ${userGradients[msg.fromUserId]} flex items-center justify-center text-xs font-bold text-white`}
-                    >
+                    <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${userGradients[msg.fromUserId]} flex items-center justify-center text-xs font-bold text-white`}>
                       {sender?.avatar}
                     </div>
                   </div>
@@ -150,15 +151,9 @@ export default function Chat() {
                   )}
                   <div
                     className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      isMe
-                        ? 'rounded-br-sm text-white'
-                        : 'rounded-bl-sm bg-white/8 text-white'
+                      isMe ? 'rounded-br-sm text-white' : 'rounded-bl-sm bg-white/8 text-white'
                     }`}
-                    style={
-                      isMe
-                        ? { background: userColors[currentUser.id] ?? '#7c6af7' }
-                        : undefined
-                    }
+                    style={isMe ? { background: userColors[currentUser.id] ?? '#7c6af7' } : undefined}
                   >
                     {msg.text}
                   </div>
@@ -171,8 +166,8 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input — fixed above the BottomNav */}
-      <div className="fixed left-0 right-0 max-w-md mx-auto px-4 py-3 bg-[#0a0a0a]/95 border-t border-white/5 backdrop-blur-xl" style={{ bottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}>
+      {/* Input — flex-shrink-0 so it always stays below messages, never overlaps them */}
+      <div className="flex-shrink-0 px-4 py-3 bg-[#0a0a0a]/95 border-t border-white/5 backdrop-blur-xl">
         <div className="flex items-center gap-3 glass rounded-2xl px-4 py-2.5">
           <input
             type="text"
