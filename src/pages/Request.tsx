@@ -4,8 +4,8 @@ import { ArrowLeft, Copy, Check, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const USERS = [
-  { id: 'stefi', name: 'Stefi', color: '#7c6af7', emoji: '💜' },
-  { id: 'mara', name: 'Mara', color: '#ec4899', emoji: '🩷' },
+  { id: 'stefi',   name: 'Stefi',   color: '#7c6af7', emoji: '💜' },
+  { id: 'mara',    name: 'Mara',    color: '#ec4899', emoji: '🩷' },
   { id: 'adriana', name: 'Adriana', color: '#22c55e', emoji: '💚' },
 ];
 
@@ -13,17 +13,22 @@ type Step = 'pick' | 'amount' | 'done';
 
 export default function Request() {
   const navigate = useNavigate();
-  const currentUser = useStore((s) => s.getCurrentUser());
-  const sendMessage = useStore((s) => s.postSystemMessage);
 
-  const [step, setStep] = useState<Step>('pick');
+  // ── Use the same robust selector pattern as Home.tsx ──
+  const users         = useStore((s) => s.users);
+  const currentUserId = useStore((s) => s.currentUserId);
+  const postSystem    = useStore((s) => s.postSystemMessage);
+
+  const currentUser   = users.find((u) => u.id === currentUserId) ?? null;
+
+  const [step, setStep]       = useState<Step>('pick');
   const [targetId, setTargetId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [amount, setAmount]   = useState('');
+  const [note, setNote]       = useState('');
+  const [copied, setCopied]   = useState(false);
 
-  const contacts = USERS.filter((u) => u.id !== currentUser?.id);
-  const target = USERS.find((u) => u.id === targetId);
+  const contacts = USERS.filter((u) => u.id !== currentUserId);
+  const target   = USERS.find((u) => u.id === targetId);
 
   function handlePickContact(id: string) {
     setTargetId(id);
@@ -35,13 +40,13 @@ export default function Request() {
     const t = USERS.find((u) => u.id === targetId);
     if (!t || !currentUser) return;
     const msg = `${currentUser.name} is requesting Ɛ${amount} from ${t.name}${note ? ` · "${note}"` : ''} 💸`;
-    sendMessage(msg);
+    postSystem(msg);
     setStep('done');
   }
 
   function buildLink() {
-    const base = window.location.origin;
-    const params = new URLSearchParams({ to: currentUser?.id ?? '', amount, ...(note ? { note } : {}) });
+    const base   = window.location.origin;
+    const params = new URLSearchParams({ to: currentUserId ?? '', amount, ...(note ? { note } : {}) });
     return `${base}/pay?${params.toString()}`;
   }
 
@@ -50,12 +55,17 @@ export default function Request() {
       await navigator.clipboard.writeText(buildLink());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }
 
-  if (!currentUser) return null;
+  // Show loading spinner instead of null so screen never goes black
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[#0a0a0a] items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#7c6af7] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0a0a] pb-safe-nav">
