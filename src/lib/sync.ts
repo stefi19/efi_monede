@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User, ChatMessage } from '../store/useStore';
-import { getPushSubscriptionsExcluding } from './pushSubscription';
+import { getPushSubscriptionsExcluding, removeDeadSubscriptions } from './pushSubscription';
 
 // ── Stable device ID (per browser tab session) ──────────────────────────────
 // We use this so the Firestore listener can skip applying updates that
@@ -72,7 +72,12 @@ async function _sendBackgroundPush(title: string, body: string) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ title, body, subscriptions }),
     });
-    if (!res.ok) console.warn('[push] /api/push returned', res.status);
+    if (!res.ok) { console.warn('[push] /api/push returned', res.status); return; }
+    // Clean up expired subscriptions reported by the server
+    const data = await res.json() as { deadEndpoints?: string[] };
+    if (data.deadEndpoints?.length) {
+      removeDeadSubscriptions(data.deadEndpoints).catch(() => {});
+    }
   } catch (err) {
     console.warn('[push] background push failed:', err);
   }

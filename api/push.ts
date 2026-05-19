@@ -48,9 +48,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const sent   = results.filter((r) => r.status === 'fulfilled').length;
   const failed = results.length - sent;
+
+  // Collect dead subscription endpoints (410 Gone / 404) so the client can
+  // clean them from Firestore and avoid wasting pushes next time.
+  const deadEndpoints: string[] = [];
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      const code = (r.reason as { statusCode?: number })?.statusCode;
+      if (code === 410 || code === 404) {
+        deadEndpoints.push(subscriptions[i]?.endpoint ?? '');
+      }
+    }
+  });
+
   if (failed > 0) {
-    console.warn(`[push] ${failed}/${results.length} push(es) failed`);
+    console.warn(`[push] ${failed}/${results.length} push(es) failed, dead: ${deadEndpoints.length}`);
   }
 
-  return res.status(200).json({ sent, failed });
+  return res.status(200).json({ sent, failed, deadEndpoints });
 }

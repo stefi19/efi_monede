@@ -36,12 +36,19 @@ async function initSync() {
     }
   });
 
-  // 3. Register for background push notifications (if permission already granted)
-  //    If permission is not yet granted, subscribeToPush() will be called again
-  //    from notify.ts after the user taps the bell button.
+  // 3. Register for background push notifications on every startup.
+  //    subscribeToPush() is idempotent — it reuses the existing subscription
+  //    if one exists, or creates a new one. Calling it here ensures the
+  //    Firestore entry is always fresh with the latest deviceId.
   if (Notification.permission === 'granted') {
     subscribeToPush().catch(() => {});
   }
+  // Also re-subscribe whenever the SW activates (handles Safari PWA reopens)
+  navigator.serviceWorker?.ready.then(() => {
+    if (Notification.permission === 'granted') {
+      subscribeToPush().catch(() => {});
+    }
+  });
 }
 
 initSync();

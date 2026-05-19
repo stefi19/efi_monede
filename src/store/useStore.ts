@@ -283,8 +283,16 @@ export const useStore = create<StoreState>()(
           }
           return u;
         });
-        set({ users: newUsers });
-        syncAfter(newUsers, get().messages);
+
+        const systemMsg: ChatMessage = {
+          id: Date.now().toString() + '-sys',
+          fromUserId: 'system',
+          text: `💸 ${fromUser.name} a trimis Ɛ${amount.toLocaleString()} către ${toUser.name}`,
+          date: now,
+        };
+        const newMessages = [...get().messages, systemMsg];
+        set({ users: newUsers, messages: newMessages });
+        syncAfter(newUsers, newMessages);
         return true;
       },
 
@@ -306,8 +314,16 @@ export const useStore = create<StoreState>()(
             ? { ...u, balance: u.balance + amount, transactions: [tx, ...u.transactions] }
             : u
         );
-        set({ users: newUsers });
-        syncAfter(newUsers, get().messages);
+        const currentUser = users.find((u) => u.id === currentUserId);
+        const topupMsg: ChatMessage = {
+          id: Date.now().toString() + '-topup',
+          fromUserId: 'system',
+          text: `💰 ${currentUser?.name ?? 'Cineva'} a adăugat Ɛ${amount.toLocaleString()} în cont`,
+          date: now,
+        };
+        const newMessages = [...get().messages, topupMsg];
+        set({ users: newUsers, messages: newMessages });
+        syncAfter(newUsers, newMessages);
       },
 
       spendForLife: (itemId, name, emoji, qty, total) => {

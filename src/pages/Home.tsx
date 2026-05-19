@@ -51,10 +51,10 @@ export default function Home() {
   const totalOut  = user.transactions.filter(t => t.type === 'send').reduce((s, t) => s + t.amount, 0);
 
   return (
-    <div className="bg-[#0a0a0a] pb-safe-nav">
+    <div className="flex flex-col min-h-full bg-[#0a0a0a] pb-safe-nav">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-3">
+      <div className="flex items-center justify-between px-5 pt-4 pb-6">
         <div className="flex items-center gap-2.5">
           <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${userGradients[user.id] ?? 'from-[#7c6af7] to-[#a78bfa]'} flex items-center justify-center text-sm font-bold text-white shrink-0`}>
             {user.avatar}
@@ -74,7 +74,7 @@ export default function Home() {
       </div>
 
       {/* Balance Card */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-6">
         <div className="rounded-2xl p-4 card-gradient relative overflow-hidden">
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-[#7c6af7]/20 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
@@ -100,7 +100,7 @@ export default function Home() {
       </div>
 
       {/* Quick Actions */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-6">
         <div className="grid grid-cols-4 gap-2">
           {quickActions.map(({ label, icon: Icon, color, to }) => (
             <button key={label} onClick={() => navigate(to)} className="flex flex-col items-center gap-1.5">
@@ -117,7 +117,7 @@ export default function Home() {
       </div>
 
       {/* Stats */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-6">
         <div className="grid grid-cols-2 gap-2.5">
           <div className="glass rounded-2xl p-3 flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-green-500/15 flex items-center justify-center shrink-0">
@@ -145,7 +145,7 @@ export default function Home() {
       </div>
 
       {/* Transactions */}
-      <div className="px-4">
+      <div className="px-5">
         <div className="flex items-center justify-between mb-2.5">
           <h2 className="text-sm font-semibold text-white">Recent transactions</h2>
           <button

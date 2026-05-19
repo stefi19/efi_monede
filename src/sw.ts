@@ -38,8 +38,9 @@ self.addEventListener('push', (event) => {
       body,
       icon:  '/favicon.svg',
       badge: '/favicon.svg',
-      tag:   'efi-monede',          // collapse duplicates
+      tag:   'efi-' + Date.now(),   // unique tag — every notification stays visible
       silent: false,
+      vibrate: [200, 100, 200],
     } as NotificationOptions)
   );
 });

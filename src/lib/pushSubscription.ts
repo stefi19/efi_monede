@@ -101,3 +101,23 @@ export async function getPushSubscriptionsExcluding(
 export async function getPushSubscriptions(): Promise<PushSubscriptionJSON[]> {
   return getPushSubscriptionsExcluding('');
 }
+
+/**
+ * Remove dead subscriptions (410 Gone / 404) from Firestore.
+ * Called after /api/push reports dead endpoints so we don't keep sending to them.
+ */
+export async function removeDeadSubscriptions(deadEndpoints: string[]): Promise<void> {
+  if (!deadEndpoints.length) return;
+  try {
+    const snap = await getDoc(PUSH_DOC);
+    if (!snap.exists()) return;
+    const all: StoredSubscription[] = snap.data().subscriptions ?? [];
+    const clean = all.filter((e) => !deadEndpoints.includes(e.sub.endpoint ?? ''));
+    if (clean.length !== all.length) {
+      await setDoc(PUSH_DOC, { subscriptions: clean });
+      console.log(`[push] removed ${all.length - clean.length} dead subscription(s)`);
+    }
+  } catch (err) {
+    console.warn('[push] removeDeadSubscriptions failed:', err);
+  }
+}
