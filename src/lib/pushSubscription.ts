@@ -1,22 +1,21 @@
-/**
- * Web Push subscription management.
- *
- * Flow:
- *  1. After notification permission is granted, call `subscribeToPush()`.
- *  2. The browser registers with the push service and returns a PushSubscription.
- *  3. We serialise it and store it in Firestore (`efi-monede/push-subs`).
- *  4. When any device calls `/api/push`, it reads all subscriptions from
- *     Firestore and sends a push to each — including to closed/background devices.
- */
-
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 const PUSH_DOC  = doc(db, 'efi-monede', 'push-subs');
-// Public VAPID key — safe to expose in client code
 const VAPID_PUB = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
 
-/** Convert a URL-safe base64 string to Uint8Array (required by pushManager.subscribe) */
+/** Stable device ID — same key used in sync.ts */
+const DEVICE_KEY = 'efi-device-id';
+function getDeviceId(): string {
+  let id = sessionStorage.getItem(DEVICE_KEY);
+  if (!id) {
+    id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    sessionStorage.setItem(DEVICE_KEY, id);
+  }
+  return id;
+}
+
+/** Convert URL-safe base64 to ArrayBuffer for pushManager.subscribe */
 function urlBase64ToUint8Array(b64: string): ArrayBuffer {
   const padding = '='.repeat((4 - (b64.length % 4)) % 4);
   const base64  = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -26,9 +25,15 @@ function urlBase64ToUint8Array(b64: string): ArrayBuffer {
   return bytes.buffer as ArrayBuffer;
 }
 
+/** Stored entry: subscription JSON + the device that owns it */
+export interface StoredSubscription {
+  deviceId: string;
+  sub: PushSubscriptionJSON;
+}
+
 /**
- * Subscribe this device to Web Push and persist the subscription in Firestore.
- * Safe to call multiple times — deduplicates by endpoint.
+ * Subscribe this device to Web Push and persist in Firestore.
+ * Safe to call many times — deduplicates by endpoint.
  */
 export async function subscribeToPush(): Promise<boolean> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
@@ -38,7 +43,6 @@ export async function subscribeToPush(): Promise<boolean> {
   try {
     const reg = await navigator.serviceWorker.ready;
 
-    // Re-use existing subscription if one already exists for this browser
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
       sub = await reg.pushManager.subscribe({
@@ -47,16 +51,22 @@ export async function subscribeToPush(): Promise<boolean> {
       });
     }
 
-    // Upsert into Firestore (dedup by endpoint URL)
-    const subJson = sub.toJSON() as PushSubscriptionJSON;
-    const snap    = await getDoc(PUSH_DOC);
-    const existing: PushSubscriptionJSON[] = snap.exists()
+    const entry: StoredSubscription = {
+      deviceId: getDeviceId(),
+      sub: sub.toJSON() as PushSubscriptionJSON,
+    };
+
+    const snap     = await getDoc(PUSH_DOC);
+    const existing: StoredSubscription[] = snap.exists()
       ? (snap.data().subscriptions ?? [])
       : [];
 
+    // Upsert: remove old entries for same endpoint OR same device, then add fresh
     const updated = [
-      ...existing.filter((s) => s.endpoint !== subJson.endpoint),
-      subJson,
+      ...existing.filter(
+        (e) => e.sub.endpoint !== entry.sub.endpoint && e.deviceId !== entry.deviceId
+      ),
+      entry,
     ];
     await setDoc(PUSH_DOC, { subscriptions: updated });
 
@@ -69,15 +79,25 @@ export async function subscribeToPush(): Promise<boolean> {
 }
 
 /**
- * Read all stored push subscriptions from Firestore.
- * Used by sync.ts before calling /api/push.
+ * Return all subscriptions EXCEPT the sender's own device.
+ * Prevents notifying yourself about your own action.
  */
-export async function getPushSubscriptions(): Promise<PushSubscriptionJSON[]> {
+export async function getPushSubscriptionsExcluding(
+  excludeDeviceId: string
+): Promise<PushSubscriptionJSON[]> {
   try {
     const snap = await getDoc(PUSH_DOC);
     if (!snap.exists()) return [];
-    return snap.data().subscriptions ?? [];
+    const all: StoredSubscription[] = snap.data().subscriptions ?? [];
+    return all
+      .filter((e) => e.deviceId !== excludeDeviceId)
+      .map((e) => e.sub);
   } catch {
     return [];
   }
+}
+
+/** Back-compat — returns all subscriptions without exclusion */
+export async function getPushSubscriptions(): Promise<PushSubscriptionJSON[]> {
+  return getPushSubscriptionsExcluding('');
 }

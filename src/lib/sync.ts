@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User, ChatMessage } from '../store/useStore';
-import { getPushSubscriptions } from './pushSubscription';
+import { getPushSubscriptionsExcluding } from './pushSubscription';
 
 // ── Stable device ID (per browser tab session) ──────────────────────────────
 // We use this so the Firestore listener can skip applying updates that
@@ -61,16 +61,18 @@ export async function saveRemoteState(users: User[], messages: ChatMessage[]) {
   }
 }
 
-/** Fire-and-forget: reads all push subscriptions from Firestore and POSTs to /api/push */
+/** Fire-and-forget: sends Web Push to all OTHER devices (not the sender) */
 async function _sendBackgroundPush(title: string, body: string) {
   try {
-    const subscriptions = await getPushSubscriptions();
+    // Exclude the current device so the sender doesn't get their own notification
+    const subscriptions = await getPushSubscriptionsExcluding(deviceId!);
     if (!subscriptions.length) return;
-    await fetch('/api/push', {
+    const res = await fetch('/api/push', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ title, body, subscriptions }),
     });
+    if (!res.ok) console.warn('[push] /api/push returned', res.status);
   } catch (err) {
     console.warn('[push] background push failed:', err);
   }
